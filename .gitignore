@@ -38,6 +38,9 @@ yarn-error.log*
 /prisma/*.db
 /prisma/*.db-journal
 
+# datos reales de clientes, no se commitea al repo publico
+/CONTROL_CLIENTES.xlsx
+
 # vercel
 .vercel
 

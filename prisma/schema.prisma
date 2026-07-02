@@ -12,16 +12,29 @@ datasource db {
   provider = "sqlite"
 }
 
-model Pedido {
-  id              String    @id @default(cuid())
-  clienteNombre   String
-  contacto        String
-  modelo          String
-  estado          String    @default("interesado")
-  fechaSolicitada DateTime?
-  fechaEnvioReal  DateTime?
-  montoPagado     Float?
-  nota            String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+model Proveedor {
+  id      String   @id @default(cuid())
+  nombre  String   @unique
+  activo  Boolean  @default(true)
+  prendas Prenda[]
+}
+
+model Prenda {
+  id                     String    @id @default(cuid())
+  clienteNombre          String
+  contacto               String?
+  disenoTela             String
+  talla                  String?
+  tipoPrenda             String
+  proveedorId            String
+  proveedor              Proveedor @relation(fields: [proveedorId], references: [id])
+  estadoFabricacion      String    @default("compra_tela_pendiente")
+  estadoPago             String    @default("interesado")
+  fechaCompra            DateTime?
+  fechaEntregaSolicitada DateTime?
+  fechaEnvioReal         DateTime?
+  montoPagado            Float?
+  nota                   String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 }

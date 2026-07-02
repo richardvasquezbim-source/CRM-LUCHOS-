@@ -1,93 +1,79 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { useState, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PedidoForm } from "@/components/pedido-form";
-import { ESTADOS, type EstadoKey } from "@/lib/estados";
-import { createPedido, updateEstado, updatePedido } from "@/app/pedidos/actions";
-import { PlusIcon } from "lucide-react";
+import {
+  ESTADOS_FABRICACION,
+  getEstadoPago,
+  type EstadoFabricacionKey,
+} from "@/lib/estados";
+import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
+import { updateEstadoFabricacion } from "@/app/prendas/actions";
+import type { Prenda } from "@/components/prendas-view";
+import type { ProveedorOption } from "@/components/proveedor-manager";
 
-export type Pedido = {
-  id: string;
-  clienteNombre: string;
-  contacto: string;
-  modelo: string;
-  estado: string;
-  fechaSolicitada: Date | null;
-  fechaEnvioReal: Date | null;
-  montoPagado: number | null;
-  nota: string | null;
+const alertaClasses: Record<string, string> = {
+  vencido: "bg-red-100 text-red-800 border-red-200",
+  proximo: "bg-amber-100 text-amber-800 border-amber-200",
+  ok: "bg-green-100 text-green-800 border-green-200",
 };
 
-function formatFecha(d: Date | null) {
-  if (!d) return null;
-  return new Date(d).toLocaleDateString("es-MX", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function formatMonto(m: number | null) {
-  if (m === null || m === undefined) return null;
-  return m.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
-}
-
-function PedidoCard({
-  pedido,
+function PrendaCard({
+  prenda,
+  subtitulo,
   onEdit,
 }: {
-  pedido: Pedido;
-  onEdit: (pedido: Pedido) => void;
+  prenda: Prenda;
+  subtitulo: string;
+  onEdit: (prenda: Prenda) => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const fechaSolicitada = formatFecha(pedido.fechaSolicitada);
-  const monto = formatMonto(pedido.montoPagado);
+  const fechaEntrega = formatFechaSoloDia(prenda.fechaEntregaSolicitada);
+  const alerta = calcularAlerta(
+    prenda.fechaEntregaSolicitada,
+    prenda.estadoFabricacion
+  );
+  const estadoPago = getEstadoPago(prenda.estadoPago);
 
   return (
     <Card className="gap-2 p-3">
-      <button
-        type="button"
-        onClick={() => onEdit(pedido)}
-        className="text-left"
-      >
-        <p className="font-medium leading-snug">{pedido.clienteNombre}</p>
-        <p className="text-sm text-muted-foreground">{pedido.modelo}</p>
-        <p className="text-xs text-muted-foreground">{pedido.contacto}</p>
-        {fechaSolicitada && (
+      <button type="button" onClick={() => onEdit(prenda)} className="text-left">
+        <p className="font-medium leading-snug">{prenda.clienteNombre}</p>
+        <p className="text-sm text-muted-foreground">
+          {prenda.disenoTela} · {prenda.tipoPrenda}
+          {prenda.talla ? ` · ${prenda.talla}` : ""}
+        </p>
+        <p className="text-xs text-muted-foreground">{subtitulo}</p>
+        {fechaEntrega && (
           <p className="text-xs text-muted-foreground">
-            Envio deseado: {fechaSolicitada}
-          </p>
-        )}
-        {monto && <p className="text-xs font-medium">{monto}</p>}
-        {pedido.nota && (
-          <p className="mt-1 truncate text-xs text-muted-foreground italic">
-            {pedido.nota}
+            Entrega: {fechaEntrega}
           </p>
         )}
       </button>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Badge className={estadoPago.colorClasses} variant="outline">
+          {estadoPago.label}
+        </Badge>
+        {alerta && (
+          <Badge variant="outline" className={alertaClasses[alerta.nivel]}>
+            {alerta.label}
+          </Badge>
+        )}
+      </div>
       <select
-        value={pedido.estado}
+        value={prenda.estadoFabricacion}
         disabled={isPending}
         onChange={(e) => {
-          const estado = e.target.value as EstadoKey;
+          const value = e.target.value as EstadoFabricacionKey;
           startTransition(() => {
-            updateEstado(pedido.id, estado);
+            updateEstadoFabricacion(prenda.id, value);
           });
         }}
         className="mt-1 h-7 rounded-md border border-input bg-transparent px-1.5 text-xs disabled:opacity-50"
       >
-        {ESTADOS.map((e) => (
+        {ESTADOS_FABRICACION.map((e) => (
           <option key={e.key} value={e.key}>
             {e.label}
           </option>
@@ -97,81 +83,85 @@ function PedidoCard({
   );
 }
 
-export function Board({ pedidos }: { pedidos: Pedido[] }) {
-  const [query, setQuery] = useState("");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editingPedido, setEditingPedido] = useState<Pedido | null>(null);
+export function Board({
+  prendas,
+  proveedores,
+  onEdit,
+}: {
+  prendas: Prenda[];
+  proveedores: ProveedorOption[];
+  onEdit: (prenda: Prenda) => void;
+}) {
+  const [agruparPor, setAgruparPor] = useState<"fabricacion" | "proveedor">(
+    "fabricacion"
+  );
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return pedidos;
-    return pedidos.filter(
-      (p) =>
-        p.clienteNombre.toLowerCase().includes(q) ||
-        p.modelo.toLowerCase().includes(q)
-    );
-  }, [pedidos, query]);
-
-  const boundUpdate = editingPedido
-    ? updatePedido.bind(null, editingPedido.id)
-    : null;
+  const proveedorIdsConPrendas = new Set(prendas.map((p) => p.proveedorId));
+  const columnas =
+    agruparPor === "fabricacion"
+      ? ESTADOS_FABRICACION.map((e) => ({ key: e.key, label: e.label }))
+      : proveedores
+          .filter((p) => p.activo || proveedorIdsConPrendas.has(p.id))
+          .map((p) => ({
+            key: p.id,
+            label: p.activo ? p.nombre : `${p.nombre} (inactivo)`,
+          }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar por cliente o modelo..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-xs"
-        />
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger
-            render={
-              <Button className="ml-auto">
-                <PlusIcon /> Nuevo pedido
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nuevo pedido</DialogTitle>
-            </DialogHeader>
-            <PedidoForm
-              action={createPedido}
-              submitLabel="Crear pedido"
-              onSuccess={() => setCreateOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Agrupar por:</span>
+        <Button
+          type="button"
+          size="sm"
+          variant={agruparPor === "fabricacion" ? "default" : "outline"}
+          onClick={() => setAgruparPor("fabricacion")}
+        >
+          Estado de fabricación
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={agruparPor === "proveedor" ? "default" : "outline"}
+          onClick={() => setAgruparPor("proveedor")}
+        >
+          Proveedor
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {ESTADOS.map((estadoInfo) => {
-          const columnPedidos = filtered.filter(
-            (p) => p.estado === estadoInfo.key
+        {columnas.map((columna) => {
+          const prendasColumna = prendas.filter((p) =>
+            agruparPor === "fabricacion"
+              ? p.estadoFabricacion === columna.key
+              : p.proveedorId === columna.key
           );
           return (
-            <div key={estadoInfo.key} className="flex flex-col gap-2">
+            <div key={columna.key} className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Badge className={estadoInfo.colorClasses} variant="outline">
-                  {estadoInfo.label}
-                </Badge>
+                <Badge variant="outline">{columna.label}</Badge>
                 <span className="text-xs text-muted-foreground">
-                  {columnPedidos.length}
+                  {prendasColumna.length}
                 </span>
               </div>
               <div className="flex flex-col gap-2">
-                {columnPedidos.map((pedido) => (
-                  <PedidoCard
-                    key={pedido.id}
-                    pedido={pedido}
-                    onEdit={setEditingPedido}
+                {prendasColumna.map((prenda) => (
+                  <PrendaCard
+                    key={prenda.id}
+                    prenda={prenda}
+                    subtitulo={
+                      agruparPor === "fabricacion"
+                        ? prenda.proveedor.nombre
+                        : ESTADOS_FABRICACION.find(
+                            (e) => e.key === prenda.estadoFabricacion
+                          )?.label ?? prenda.estadoFabricacion
+                    }
+                    onEdit={onEdit}
                   />
                 ))}
-                {columnPedidos.length === 0 && (
+                {prendasColumna.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Sin pedidos aqui.
+                    Sin prendas aquí.
                   </p>
                 )}
               </div>
@@ -179,25 +169,6 @@ export function Board({ pedidos }: { pedidos: Pedido[] }) {
           );
         })}
       </div>
-
-      <Dialog
-        open={!!editingPedido}
-        onOpenChange={(open) => !open && setEditingPedido(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar pedido</DialogTitle>
-          </DialogHeader>
-          {editingPedido && boundUpdate && (
-            <PedidoForm
-              pedido={editingPedido}
-              action={boundUpdate}
-              submitLabel="Guardar cambios"
-              onSuccess={() => setEditingPedido(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
