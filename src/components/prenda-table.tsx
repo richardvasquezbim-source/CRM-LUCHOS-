@@ -2,6 +2,7 @@
 
 import { useMemo, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ESTADOS_FABRICACION, ESTADOS_PAGO } from "@/lib/estados";
 import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { EstadoFabricacionKey, EstadoPagoKey } from "@/lib/estados";
+import { Trash2Icon } from "lucide-react";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
@@ -29,9 +31,11 @@ const alertaClasses: Record<string, string> = {
 function Fila({
   prenda,
   onEdit,
+  onArchive,
 }: {
   prenda: Prenda;
   onEdit: (prenda: Prenda) => void;
+  onArchive: (prenda: Prenda) => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const alerta = calcularAlerta(
@@ -108,6 +112,17 @@ function Fila({
       <td className="max-w-[160px] truncate px-3 py-2 text-muted-foreground italic">
         {prenda.nota || ""}
       </td>
+      <td className="px-3 py-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          title="Archivar"
+          onClick={() => onArchive(prenda)}
+        >
+          <Trash2Icon />
+        </Button>
+      </td>
     </tr>
   );
 }
@@ -115,9 +130,11 @@ function Fila({
 export function PrendaTable({
   prendas,
   onEdit,
+  onArchive,
 }: {
   prendas: Prenda[];
   onEdit: (prenda: Prenda) => void;
+  onArchive: (prenda: Prenda) => void;
 }) {
   const ordenadas = useMemo(() => {
     return [...prendas].sort((a, b) => {
@@ -148,15 +165,16 @@ export function PrendaTable({
             <th className="px-3 py-2 font-medium">Alerta</th>
             <th className="px-3 py-2 font-medium">Monto</th>
             <th className="px-3 py-2 font-medium">Nota</th>
+            <th className="px-3 py-2 font-medium"></th>
           </tr>
         </thead>
         <tbody>
           {ordenadas.map((p) => (
-            <Fila key={p.id} prenda={p} onEdit={onEdit} />
+            <Fila key={p.id} prenda={p} onEdit={onEdit} onArchive={onArchive} />
           ))}
           {ordenadas.length === 0 && (
             <tr>
-              <td colSpan={12} className="px-3 py-6 text-center text-muted-foreground">
+              <td colSpan={13} className="px-3 py-6 text-center text-muted-foreground">
                 Sin prendas que coincidan con los filtros.
               </td>
             </tr>

@@ -10,6 +10,8 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // conexión directa (no pooleada): prisma migrate necesita locks de
+    // asesoría que el modo transaction pooling de pgbouncer no soporta
+    url: process.env["DIRECT_URL"],
   },
 });

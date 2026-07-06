@@ -1,9 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { prendaSchema, type PrendaFormState } from "@/lib/validations/prenda";
-import type { EstadoFabricacionKey, EstadoPagoKey } from "@/lib/estados";
+import {
+  getEstadoFabricacion,
+  getEstadoPago,
+  type EstadoFabricacionKey,
+  type EstadoPagoKey,
+} from "@/lib/estados";
 
 export async function createPrenda(
   _prevState: PrendaFormState,
@@ -68,4 +74,71 @@ export async function createProveedor(
 export async function setProveedorActivo(id: string, activo: boolean) {
   await prisma.proveedor.update({ where: { id }, data: { activo } });
   revalidatePath("/");
+}
+
+export async function archivarPrenda(id: string) {
+  await prisma.prenda.update({ where: { id }, data: { archivedAt: new Date() } });
+  revalidatePath("/");
+}
+
+export async function restaurarPrenda(id: string) {
+  await prisma.prenda.update({ where: { id }, data: { archivedAt: null } });
+  revalidatePath("/");
+}
+
+function formatFechaExcel(d: Date | null) {
+  return d ? d.toISOString().slice(0, 10) : "";
+}
+
+export async function exportarRespaldo(): Promise<{
+  base64: string;
+  filename: string;
+}> {
+  const [prendas, proveedores] = await Promise.all([
+    prisma.prenda.findMany({
+      include: { proveedor: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.proveedor.findMany({ orderBy: { nombre: "asc" } }),
+  ]);
+
+  const prendasRows = prendas.map((p) => ({
+    Cliente: p.clienteNombre,
+    Contacto: p.contacto ?? "",
+    "Diseño / Tela": p.disenoTela,
+    Talla: p.talla ?? "",
+    Tipo: p.tipoPrenda,
+    Proveedor: p.proveedor.nombre,
+    Fabricación: getEstadoFabricacion(p.estadoFabricacion).label,
+    Pago: getEstadoPago(p.estadoPago).label,
+    "Fecha compra": formatFechaExcel(p.fechaCompra),
+    "Fecha entrega solicitada": formatFechaExcel(p.fechaEntregaSolicitada),
+    "Fecha envío real": formatFechaExcel(p.fechaEnvioReal),
+    Monto: p.montoPagado ?? "",
+    Nota: p.nota ?? "",
+    Archivada: p.archivedAt ? "Sí" : "No",
+    "Fecha archivado": formatFechaExcel(p.archivedAt),
+  }));
+
+  const proveedoresRows = proveedores.map((p) => ({
+    Nombre: p.nombre,
+    Activo: p.activo ? "Sí" : "No",
+  }));
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(prendasRows),
+    "Prendas"
+  );
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(proveedoresRows),
+    "Proveedores"
+  );
+
+  const base64 = XLSX.write(workbook, { type: "base64", bookType: "xlsx" });
+  const filename = `respaldo-crm-petshop-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+  return { base64, filename };
 }

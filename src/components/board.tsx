@@ -13,6 +13,7 @@ import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import { updateEstadoFabricacion } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { ProveedorOption } from "@/components/proveedor-manager";
+import { Trash2Icon } from "lucide-react";
 
 const alertaClasses: Record<string, string> = {
   vencido: "bg-red-100 text-red-800 border-red-200",
@@ -24,10 +25,12 @@ function PrendaCard({
   prenda,
   subtitulo,
   onEdit,
+  onArchive,
 }: {
   prenda: Prenda;
   subtitulo: string;
   onEdit: (prenda: Prenda) => void;
+  onArchive: (prenda: Prenda) => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const fechaEntrega = formatFechaSoloDia(prenda.fechaEntregaSolicitada);
@@ -39,19 +42,34 @@ function PrendaCard({
 
   return (
     <Card className="gap-2 p-3">
-      <button type="button" onClick={() => onEdit(prenda)} className="text-left">
-        <p className="font-medium leading-snug">{prenda.clienteNombre}</p>
-        <p className="text-sm text-muted-foreground">
-          {prenda.disenoTela} · {prenda.tipoPrenda}
-          {prenda.talla ? ` · ${prenda.talla}` : ""}
-        </p>
-        <p className="text-xs text-muted-foreground">{subtitulo}</p>
-        {fechaEntrega && (
-          <p className="text-xs text-muted-foreground">
-            Entrega: {fechaEntrega}
+      <div className="flex items-start justify-between gap-1">
+        <button
+          type="button"
+          onClick={() => onEdit(prenda)}
+          className="text-left"
+        >
+          <p className="font-medium leading-snug">{prenda.clienteNombre}</p>
+          <p className="text-sm text-muted-foreground">
+            {prenda.disenoTela} · {prenda.tipoPrenda}
+            {prenda.talla ? ` · ${prenda.talla}` : ""}
           </p>
-        )}
-      </button>
+          <p className="text-xs text-muted-foreground">{subtitulo}</p>
+          {fechaEntrega && (
+            <p className="text-xs text-muted-foreground">
+              Entrega: {fechaEntrega}
+            </p>
+          )}
+        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          title="Archivar"
+          onClick={() => onArchive(prenda)}
+        >
+          <Trash2Icon />
+        </Button>
+      </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge className={estadoPago.colorClasses} variant="outline">
           {estadoPago.label}
@@ -87,10 +105,12 @@ export function Board({
   prendas,
   proveedores,
   onEdit,
+  onArchive,
 }: {
   prendas: Prenda[];
   proveedores: ProveedorOption[];
   onEdit: (prenda: Prenda) => void;
+  onArchive: (prenda: Prenda) => void;
 }) {
   const [agruparPor, setAgruparPor] = useState<"fabricacion" | "proveedor">(
     "fabricacion"
@@ -157,6 +177,7 @@ export function Board({
                           )?.label ?? prenda.estadoFabricacion
                     }
                     onEdit={onEdit}
+                    onArchive={onArchive}
                   />
                 ))}
                 {prendasColumna.length === 0 && (

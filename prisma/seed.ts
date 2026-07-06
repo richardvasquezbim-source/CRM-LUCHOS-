@@ -1,11 +1,11 @@
 import "dotenv/config";
 import path from "node:path";
 import * as XLSX from "xlsx";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { ESTADO_FABRICACION_KEYS, type EstadoFabricacionKey } from "../src/lib/estados";
 
-const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 const EXCEL_PATH = path.join(__dirname, "..", "CONTROL_CLIENTES.xlsx");

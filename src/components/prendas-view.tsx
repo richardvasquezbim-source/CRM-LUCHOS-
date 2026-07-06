@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +13,21 @@ import {
 import { PrendaForm } from "@/components/prenda-form";
 import { PrendaTable } from "@/components/prenda-table";
 import { Board } from "@/components/board";
+import { PapeleraTable } from "@/components/papelera-table";
 import {
   ProveedorManager,
   type ProveedorOption,
 } from "@/components/proveedor-manager";
 import { calcularAlerta } from "@/lib/alerta";
 import { ESTADOS_FABRICACION, ESTADOS_PAGO } from "@/lib/estados";
-import { createPrenda, updatePrenda } from "@/app/prendas/actions";
-import { PlusIcon } from "lucide-react";
+import {
+  archivarPrenda,
+  createPrenda,
+  exportarRespaldo,
+  updatePrenda,
+} from "@/app/prendas/actions";
+import { PlusIcon, DownloadIcon } from "lucide-react";
+import { toast } from "sonner";
 
 export type Prenda = {
   id: string;
@@ -38,6 +45,7 @@ export type Prenda = {
   fechaEnvioReal: Date | null;
   montoPagado: number | null;
   nota: string | null;
+  archivedAt: Date | null;
 };
 
 const selectClass =
@@ -45,12 +53,14 @@ const selectClass =
 
 export function PrendasView({
   prendas,
+  prendasArchivadas,
   proveedores,
 }: {
   prendas: Prenda[];
+  prendasArchivadas: Prenda[];
   proveedores: ProveedorOption[];
 }) {
-  const [vista, setVista] = useState<"tabla" | "kanban">("tabla");
+  const [vista, setVista] = useState<"tabla" | "kanban" | "papelera">("tabla");
   const [query, setQuery] = useState("");
   const [proveedorFiltro, setProveedorFiltro] = useState("todos");
   const [fabricacionFiltro, setFabricacionFiltro] = useState("todos");
@@ -58,6 +68,9 @@ export function PrendasView({
   const [alertaFiltro, setAlertaFiltro] = useState("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingPrenda, setEditingPrenda] = useState<Prenda | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState<Prenda | null>(null);
+  const [isArchiving, startArchiving] = useTransition();
+  const [isExporting, startExporting] = useTransition();
 
   const conteoPorProveedor = useMemo(() => {
     const map = new Map<string, number>();
@@ -105,6 +118,37 @@ export function PrendasView({
   const boundUpdate = editingPrenda
     ? updatePrenda.bind(null, editingPrenda.id)
     : null;
+
+  function handleConfirmArchive() {
+    if (!confirmArchive) return;
+    const id = confirmArchive.id;
+    startArchiving(async () => {
+      await archivarPrenda(id);
+      toast.success("Prenda archivada");
+      setConfirmArchive(null);
+    });
+  }
+
+  function handleExport() {
+    startExporting(async () => {
+      const { base64, filename } = await exportarRespaldo();
+      const byteChars = atob(base64);
+      const bytes = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        bytes[i] = byteChars.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Respaldo descargado");
+    });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -178,6 +222,21 @@ export function PrendasView({
           >
             Kanban
           </Button>
+          <Button
+            type="button"
+            variant={vista === "papelera" ? "default" : "outline"}
+            onClick={() => setVista("papelera")}
+          >
+            Papelera ({prendasArchivadas.length})
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon /> Exportar respaldo
+          </Button>
           <ProveedorManager proveedores={proveedores} />
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger
@@ -202,14 +261,23 @@ export function PrendasView({
         </div>
       </div>
 
-      {vista === "tabla" ? (
-        <PrendaTable prendas={filtered} onEdit={setEditingPrenda} />
-      ) : (
+      {vista === "tabla" && (
+        <PrendaTable
+          prendas={filtered}
+          onEdit={setEditingPrenda}
+          onArchive={setConfirmArchive}
+        />
+      )}
+      {vista === "kanban" && (
         <Board
           prendas={filtered}
           proveedores={proveedores}
           onEdit={setEditingPrenda}
+          onArchive={setConfirmArchive}
         />
+      )}
+      {vista === "papelera" && (
+        <PapeleraTable prendas={prendasArchivadas} />
       )}
 
       <Dialog
@@ -229,6 +297,40 @@ export function PrendasView({
               onSuccess={() => setEditingPrenda(null)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!confirmArchive}
+        onOpenChange={(open) => !open && setConfirmArchive(null)}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Archivar esta prenda?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {confirmArchive?.clienteNombre} · {confirmArchive?.disenoTela}
+            <br />
+            Se va a ocultar de la tabla y el kanban. Podés restaurarla en
+            cualquier momento desde la Papelera.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmArchive(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isArchiving}
+              onClick={handleConfirmArchive}
+            >
+              Archivar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
