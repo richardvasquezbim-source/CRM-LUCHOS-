@@ -3,7 +3,12 @@
 import { useMemo, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ESTADOS_FABRICACION, ESTADOS_PAGO } from "@/lib/estados";
+import {
+  ESTADOS_FABRICACION,
+  ESTADOS_PAGO,
+  getEstadoFabricacion,
+  getEstadoPago,
+} from "@/lib/estados";
 import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import {
   updateEstadoFabricacion,
@@ -127,6 +132,89 @@ function Fila({
   );
 }
 
+function FilaCard({
+  prenda,
+  onEdit,
+  onArchive,
+}: {
+  prenda: Prenda;
+  onEdit: (prenda: Prenda) => void;
+  onArchive: (prenda: Prenda) => void;
+}) {
+  const alerta = calcularAlerta(
+    prenda.fechaEntregaSolicitada,
+    prenda.estadoFabricacion
+  );
+  const estadoFabricacion = getEstadoFabricacion(prenda.estadoFabricacion);
+  const estadoPago = getEstadoPago(prenda.estadoPago);
+  const envio = prenda.fechaEnvioReal
+    ? formatFechaSoloDia(prenda.fechaEnvioReal)
+    : "Pendiente";
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onEdit(prenda)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEdit(prenda);
+        }
+      }}
+      className="cursor-pointer rounded-xl border bg-card p-3 text-left hover:bg-muted/50"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-base font-medium leading-snug">
+            {prenda.clienteNombre}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {prenda.disenoTela} · {prenda.tipoPrenda}
+            {prenda.talla ? ` · ${prenda.talla}` : ""}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          title="Archivar"
+          onClick={(e) => {
+            e.stopPropagation();
+            onArchive(prenda);
+          }}
+        >
+          <Trash2Icon />
+        </Button>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Proveedor: {prenda.proveedor.nombre}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Entrega: {formatFecha(prenda.fechaEntregaSolicitada)} · Envío: {envio}
+      </p>
+      {prenda.montoPagado !== null && (
+        <p className="text-xs text-muted-foreground">
+          Monto: {formatMonto(prenda.montoPagado)}
+        </p>
+      )}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <Badge variant="outline" className={estadoFabricacion.colorClasses}>
+          {estadoFabricacion.label}
+        </Badge>
+        <Badge variant="outline" className={estadoPago.colorClasses}>
+          {estadoPago.label}
+        </Badge>
+        {alerta && (
+          <Badge variant="outline" className={alertaClasses[alerta.nivel]}>
+            {alerta.label}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function PrendaTable({
   prendas,
   onEdit,
@@ -149,7 +237,8 @@ export function PrendaTable({
   }, [prendas]);
 
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <>
+      <div className="hidden overflow-x-auto rounded-md border md:block">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50 text-left">
@@ -181,6 +270,18 @@ export function PrendaTable({
           )}
         </tbody>
       </table>
-    </div>
+      </div>
+
+      <div className="flex flex-col gap-2 md:hidden">
+        {ordenadas.map((p) => (
+          <FilaCard key={p.id} prenda={p} onEdit={onEdit} onArchive={onArchive} />
+        ))}
+        {ordenadas.length === 0 && (
+          <p className="rounded-md border px-3 py-6 text-center text-muted-foreground">
+            Sin prendas que coincidan con los filtros.
+          </p>
+        )}
+      </div>
+    </>
   );
 }
