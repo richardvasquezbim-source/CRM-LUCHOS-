@@ -50,3 +50,6 @@ next-env.d.ts
 .claude/
 
 /src/generated/prisma
+
+# Log local del servidor de desarrollo
+devserver.log

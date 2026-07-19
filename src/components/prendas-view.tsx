@@ -60,7 +60,9 @@ export function PrendasView({
   prendasArchivadas: Prenda[];
   proveedores: ProveedorOption[];
 }) {
-  const [vista, setVista] = useState<"tabla" | "kanban" | "papelera">("tabla");
+  const [vista, setVista] = useState<
+    "tabla" | "kanban" | "enviados" | "papelera"
+  >("tabla");
   const [query, setQuery] = useState("");
   const [proveedorFiltro, setProveedorFiltro] = useState("todos");
   const [fabricacionFiltro, setFabricacionFiltro] = useState("todos");
@@ -114,6 +116,21 @@ export function PrendasView({
       return true;
     });
   }, [prendas, query, proveedorFiltro, fabricacionFiltro, pagoFiltro, alertaFiltro]);
+
+  // Separamos los pedidos ya "enviado" para que no alarguen la tabla principal;
+  // viven en su propia pestaña. El kanban sigue usando `filtered` completo.
+  const filtradasActivas = useMemo(
+    () => filtered.filter((p) => p.estadoFabricacion !== "enviado"),
+    [filtered]
+  );
+  const filtradasEnviadas = useMemo(
+    () => filtered.filter((p) => p.estadoFabricacion === "enviado"),
+    [filtered]
+  );
+  const totalEnviadas = useMemo(
+    () => prendas.filter((p) => p.estadoFabricacion === "enviado").length,
+    [prendas]
+  );
 
   const boundUpdate = editingPrenda
     ? updatePrenda.bind(null, editingPrenda.id)
@@ -224,6 +241,13 @@ export function PrendasView({
           </Button>
           <Button
             type="button"
+            variant={vista === "enviados" ? "default" : "outline"}
+            onClick={() => setVista("enviados")}
+          >
+            Enviados ({totalEnviadas})
+          </Button>
+          <Button
+            type="button"
             variant={vista === "papelera" ? "default" : "outline"}
             onClick={() => setVista("papelera")}
           >
@@ -263,7 +287,7 @@ export function PrendasView({
 
       {vista === "tabla" && (
         <PrendaTable
-          prendas={filtered}
+          prendas={filtradasActivas}
           onEdit={setEditingPrenda}
           onArchive={setConfirmArchive}
         />
@@ -272,6 +296,13 @@ export function PrendasView({
         <Board
           prendas={filtered}
           proveedores={proveedores}
+          onEdit={setEditingPrenda}
+          onArchive={setConfirmArchive}
+        />
+      )}
+      {vista === "enviados" && (
+        <PrendaTable
+          prendas={filtradasEnviadas}
           onEdit={setEditingPrenda}
           onArchive={setConfirmArchive}
         />
