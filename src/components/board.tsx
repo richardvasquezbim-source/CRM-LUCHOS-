@@ -13,7 +13,7 @@ import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import { updateEstadoFabricacion } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { ProveedorOption } from "@/components/proveedor-manager";
-import { Trash2Icon } from "lucide-react";
+import { CopyIcon, Trash2Icon } from "lucide-react";
 
 const alertaClasses: Record<string, string> = {
   vencido: "bg-red-100 text-red-800 border-red-200",
@@ -25,11 +25,13 @@ function PrendaCard({
   prenda,
   subtitulo,
   onEdit,
+  onDuplicate,
   onArchive,
 }: {
   prenda: Prenda;
   subtitulo: string;
   onEdit: (prenda: Prenda) => void;
+  onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -60,15 +62,26 @@ function PrendaCard({
             </p>
           )}
         </button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          title="Archivar"
-          onClick={() => onArchive(prenda)}
-        >
-          <Trash2Icon />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Duplicar"
+            onClick={() => onDuplicate(prenda)}
+          >
+            <CopyIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Archivar"
+            onClick={() => onArchive(prenda)}
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge className={estadoPago.colorClasses} variant="outline">
@@ -105,11 +118,13 @@ export function Board({
   prendas,
   proveedores,
   onEdit,
+  onDuplicate,
   onArchive,
 }: {
   prendas: Prenda[];
   proveedores: ProveedorOption[];
   onEdit: (prenda: Prenda) => void;
+  onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
   const [agruparPor, setAgruparPor] = useState<"fabricacion" | "proveedor">(
@@ -177,6 +192,7 @@ export function Board({
                           )?.label ?? prenda.estadoFabricacion
                     }
                     onEdit={onEdit}
+                    onDuplicate={onDuplicate}
                     onArchive={onArchive}
                   />
                 ))}

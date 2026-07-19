@@ -70,6 +70,7 @@ export function PrendasView({
   const [alertaFiltro, setAlertaFiltro] = useState("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingPrenda, setEditingPrenda] = useState<Prenda | null>(null);
+  const [duplicandoPrenda, setDuplicandoPrenda] = useState<Prenda | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<Prenda | null>(null);
   const [isArchiving, startArchiving] = useTransition();
   const [isExporting, startExporting] = useTransition();
@@ -262,7 +263,11 @@ export function PrendasView({
             <DownloadIcon /> Exportar respaldo
           </Button>
           <ProveedorManager proveedores={proveedores} />
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <Dialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            disablePointerDismissal
+          >
             <DialogTrigger
               render={
                 <Button>
@@ -278,6 +283,7 @@ export function PrendasView({
                 proveedores={proveedores}
                 action={createPrenda}
                 submitLabel="Crear prenda"
+                draftKey="nueva"
                 onSuccess={() => setCreateOpen(false)}
               />
             </DialogContent>
@@ -289,6 +295,7 @@ export function PrendasView({
         <PrendaTable
           prendas={filtradasActivas}
           onEdit={setEditingPrenda}
+          onDuplicate={setDuplicandoPrenda}
           onArchive={setConfirmArchive}
         />
       )}
@@ -297,6 +304,7 @@ export function PrendasView({
           prendas={filtered}
           proveedores={proveedores}
           onEdit={setEditingPrenda}
+          onDuplicate={setDuplicandoPrenda}
           onArchive={setConfirmArchive}
         />
       )}
@@ -304,6 +312,7 @@ export function PrendasView({
         <PrendaTable
           prendas={filtradasEnviadas}
           onEdit={setEditingPrenda}
+          onDuplicate={setDuplicandoPrenda}
           onArchive={setConfirmArchive}
         />
       )}
@@ -314,6 +323,7 @@ export function PrendasView({
       <Dialog
         open={!!editingPrenda}
         onOpenChange={(open) => !open && setEditingPrenda(null)}
+        disablePointerDismissal
       >
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
@@ -325,7 +335,31 @@ export function PrendasView({
               proveedores={proveedores}
               action={boundUpdate}
               submitLabel="Guardar cambios"
+              draftKey={`editar-${editingPrenda.id}`}
               onSuccess={() => setEditingPrenda(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicar: mismo formulario de creación, precargado con otra prenda. */}
+      <Dialog
+        open={!!duplicandoPrenda}
+        onOpenChange={(open) => !open && setDuplicandoPrenda(null)}
+        disablePointerDismissal
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Duplicar prenda</DialogTitle>
+          </DialogHeader>
+          {duplicandoPrenda && (
+            <PrendaForm
+              prenda={duplicandoPrenda}
+              proveedores={proveedores}
+              action={createPrenda}
+              submitLabel="Crear copia"
+              draftKey={`duplicar-${duplicandoPrenda.id}`}
+              onSuccess={() => setDuplicandoPrenda(null)}
             />
           )}
         </DialogContent>

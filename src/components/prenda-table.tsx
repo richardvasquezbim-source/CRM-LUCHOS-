@@ -16,7 +16,7 @@ import {
 } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { EstadoFabricacionKey, EstadoPagoKey } from "@/lib/estados";
-import { Trash2Icon } from "lucide-react";
+import { CopyIcon, Trash2Icon } from "lucide-react";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
@@ -36,10 +36,12 @@ const alertaClasses: Record<string, string> = {
 function Fila({
   prenda,
   onEdit,
+  onDuplicate,
   onArchive,
 }: {
   prenda: Prenda;
   onEdit: (prenda: Prenda) => void;
+  onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -49,7 +51,7 @@ function Fila({
   );
 
   return (
-    <tr className="border-b hover:bg-muted/50">
+    <tr className="group border-b hover:bg-muted/50">
       <td
         className="cursor-pointer px-3 py-2 font-medium"
         onClick={() => onEdit(prenda)}
@@ -117,16 +119,29 @@ function Fila({
       <td className="max-w-[160px] truncate px-3 py-2 text-muted-foreground italic">
         {prenda.nota || ""}
       </td>
-      <td className="px-3 py-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          title="Archivar"
-          onClick={() => onArchive(prenda)}
-        >
-          <Trash2Icon />
-        </Button>
+      {/* Columna fija a la derecha: la tabla es ancha y scrollea en horizontal,
+          así las acciones quedan siempre a la vista. */}
+      <td className="sticky right-0 z-10 border-l bg-background px-3 py-2 group-hover:bg-muted">
+        <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Duplicar"
+            onClick={() => onDuplicate(prenda)}
+          >
+            <CopyIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Archivar"
+            onClick={() => onArchive(prenda)}
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
       </td>
     </tr>
   );
@@ -135,10 +150,12 @@ function Fila({
 function FilaCard({
   prenda,
   onEdit,
+  onDuplicate,
   onArchive,
 }: {
   prenda: Prenda;
   onEdit: (prenda: Prenda) => void;
+  onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
   const alerta = calcularAlerta(
@@ -174,18 +191,32 @@ function FilaCard({
             {prenda.talla ? ` · ${prenda.talla}` : ""}
           </p>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          title="Archivar"
-          onClick={(e) => {
-            e.stopPropagation();
-            onArchive(prenda);
-          }}
-        >
-          <Trash2Icon />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Duplicar"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate(prenda);
+            }}
+          >
+            <CopyIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Archivar"
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive(prenda);
+            }}
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
         Proveedor: {prenda.proveedor.nombre}
@@ -218,10 +249,12 @@ function FilaCard({
 export function PrendaTable({
   prendas,
   onEdit,
+  onDuplicate,
   onArchive,
 }: {
   prendas: Prenda[];
   onEdit: (prenda: Prenda) => void;
+  onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
   const ordenadas = useMemo(() => {
@@ -254,12 +287,20 @@ export function PrendaTable({
             <th className="px-3 py-2 font-medium">Alerta</th>
             <th className="px-3 py-2 font-medium">Monto</th>
             <th className="px-3 py-2 font-medium">Nota</th>
-            <th className="px-3 py-2 font-medium"></th>
+            <th className="sticky right-0 z-10 border-l bg-muted px-3 py-2 font-medium">
+              Acciones
+            </th>
           </tr>
         </thead>
         <tbody>
           {ordenadas.map((p) => (
-            <Fila key={p.id} prenda={p} onEdit={onEdit} onArchive={onArchive} />
+            <Fila
+              key={p.id}
+              prenda={p}
+              onEdit={onEdit}
+              onDuplicate={onDuplicate}
+              onArchive={onArchive}
+            />
           ))}
           {ordenadas.length === 0 && (
             <tr>
@@ -274,7 +315,13 @@ export function PrendaTable({
 
       <div className="flex flex-col gap-2 md:hidden">
         {ordenadas.map((p) => (
-          <FilaCard key={p.id} prenda={p} onEdit={onEdit} onArchive={onArchive} />
+          <FilaCard
+            key={p.id}
+            prenda={p}
+            onEdit={onEdit}
+            onDuplicate={onDuplicate}
+            onArchive={onArchive}
+          />
         ))}
         {ordenadas.length === 0 && (
           <p className="rounded-md border px-3 py-6 text-center text-muted-foreground">
