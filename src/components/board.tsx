@@ -13,7 +13,7 @@ import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import { updateEstadoFabricacion } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { ProveedorOption } from "@/components/proveedor-manager";
-import { CopyIcon, Trash2Icon } from "lucide-react";
+import { CopyIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 const alertaClasses: Record<string, string> = {
   vencido: "bg-red-100 text-red-800 border-red-200",
@@ -24,12 +24,14 @@ const alertaClasses: Record<string, string> = {
 function PrendaCard({
   prenda,
   subtitulo,
+  onView,
   onEdit,
   onDuplicate,
   onArchive,
 }: {
   prenda: Prenda;
   subtitulo: string;
+  onView: (prenda: Prenda) => void;
   onEdit: (prenda: Prenda) => void;
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
@@ -47,7 +49,7 @@ function PrendaCard({
       <div className="flex items-start justify-between gap-1">
         <button
           type="button"
-          onClick={() => onEdit(prenda)}
+          onClick={() => onView(prenda)}
           className="text-left"
         >
           <p className="font-medium leading-snug">{prenda.clienteNombre}</p>
@@ -63,6 +65,15 @@ function PrendaCard({
           )}
         </button>
         <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Editar"
+            onClick={() => onEdit(prenda)}
+          >
+            <PencilIcon />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -117,12 +128,14 @@ function PrendaCard({
 export function Board({
   prendas,
   proveedores,
+  onView,
   onEdit,
   onDuplicate,
   onArchive,
 }: {
   prendas: Prenda[];
   proveedores: ProveedorOption[];
+  onView: (prenda: Prenda) => void;
   onEdit: (prenda: Prenda) => void;
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
@@ -191,6 +204,7 @@ export function Board({
                             (e) => e.key === prenda.estadoFabricacion
                           )?.label ?? prenda.estadoFabricacion
                     }
+                    onView={onView}
                     onEdit={onEdit}
                     onDuplicate={onDuplicate}
                     onArchive={onArchive}

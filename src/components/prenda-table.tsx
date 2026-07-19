@@ -16,7 +16,7 @@ import {
 } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { EstadoFabricacionKey, EstadoPagoKey } from "@/lib/estados";
-import { CopyIcon, Trash2Icon } from "lucide-react";
+import { CopyIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
@@ -35,11 +35,13 @@ const alertaClasses: Record<string, string> = {
 
 function Fila({
   prenda,
+  onView,
   onEdit,
   onDuplicate,
   onArchive,
 }: {
   prenda: Prenda;
+  onView: (prenda: Prenda) => void;
   onEdit: (prenda: Prenda) => void;
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
@@ -51,23 +53,21 @@ function Fila({
   );
 
   return (
-    <tr className="group border-b hover:bg-muted/50">
-      <td
-        className="cursor-pointer px-3 py-2 font-medium"
-        onClick={() => onEdit(prenda)}
-      >
-        {prenda.clienteNombre}
-      </td>
+    // Toda la fila abre el detalle; los controles interactivos de dentro
+    // detienen la propagación para no abrirlo sin querer.
+    <tr
+      className="group cursor-pointer border-b hover:bg-muted/50"
+      onClick={() => onView(prenda)}
+    >
+      <td className="px-3 py-2 font-medium">{prenda.clienteNombre}</td>
       <td className="px-3 py-2 text-muted-foreground">
         {prenda.contacto || "-"}
       </td>
-      <td className="cursor-pointer px-3 py-2" onClick={() => onEdit(prenda)}>
-        {prenda.disenoTela}
-      </td>
+      <td className="px-3 py-2">{prenda.disenoTela}</td>
       <td className="px-3 py-2">{prenda.talla || "-"}</td>
       <td className="px-3 py-2">{prenda.tipoPrenda}</td>
       <td className="px-3 py-2">{prenda.proveedor.nombre}</td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
         <select
           value={prenda.estadoFabricacion}
           disabled={isPending}
@@ -86,7 +86,7 @@ function Fila({
           ))}
         </select>
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
         <select
           value={prenda.estadoPago}
           disabled={isPending}
@@ -121,8 +121,20 @@ function Fila({
       </td>
       {/* Columna fija a la derecha: la tabla es ancha y scrollea en horizontal,
           así las acciones quedan siempre a la vista. */}
-      <td className="sticky right-0 z-10 border-l bg-background px-3 py-2 group-hover:bg-muted">
+      <td
+        className="sticky right-0 z-10 border-l bg-background px-3 py-2 group-hover:bg-muted"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Editar"
+            onClick={() => onEdit(prenda)}
+          >
+            <PencilIcon />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -149,11 +161,13 @@ function Fila({
 
 function FilaCard({
   prenda,
+  onView,
   onEdit,
   onDuplicate,
   onArchive,
 }: {
   prenda: Prenda;
+  onView: (prenda: Prenda) => void;
   onEdit: (prenda: Prenda) => void;
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
@@ -172,11 +186,11 @@ function FilaCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onEdit(prenda)}
+      onClick={() => onView(prenda)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onEdit(prenda);
+          onView(prenda);
         }
       }}
       className="cursor-pointer rounded-xl border bg-card p-3 text-left hover:bg-muted/50"
@@ -192,6 +206,18 @@ function FilaCard({
           </p>
         </div>
         <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Editar"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(prenda);
+            }}
+          >
+            <PencilIcon />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -248,11 +274,13 @@ function FilaCard({
 
 export function PrendaTable({
   prendas,
+  onView,
   onEdit,
   onDuplicate,
   onArchive,
 }: {
   prendas: Prenda[];
+  onView: (prenda: Prenda) => void;
   onEdit: (prenda: Prenda) => void;
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
@@ -297,6 +325,7 @@ export function PrendaTable({
             <Fila
               key={p.id}
               prenda={p}
+              onView={onView}
               onEdit={onEdit}
               onDuplicate={onDuplicate}
               onArchive={onArchive}
@@ -318,6 +347,7 @@ export function PrendaTable({
           <FilaCard
             key={p.id}
             prenda={p}
+            onView={onView}
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onArchive={onArchive}

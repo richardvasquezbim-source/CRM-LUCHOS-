@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { PrendaForm } from "@/components/prenda-form";
 import { PrendaTable } from "@/components/prenda-table";
+import { PrendaDetalle } from "@/components/prenda-detalle";
 import { Board } from "@/components/board";
 import { PapeleraTable } from "@/components/papelera-table";
 import {
@@ -26,7 +27,7 @@ import {
   exportarRespaldo,
   updatePrenda,
 } from "@/app/prendas/actions";
-import { PlusIcon, DownloadIcon } from "lucide-react";
+import { PlusIcon, DownloadIcon, PencilIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export type Prenda = {
@@ -71,6 +72,7 @@ export function PrendasView({
   const [createOpen, setCreateOpen] = useState(false);
   const [editingPrenda, setEditingPrenda] = useState<Prenda | null>(null);
   const [duplicandoPrenda, setDuplicandoPrenda] = useState<Prenda | null>(null);
+  const [detallePrenda, setDetallePrenda] = useState<Prenda | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<Prenda | null>(null);
   const [isArchiving, startArchiving] = useTransition();
   const [isExporting, startExporting] = useTransition();
@@ -294,6 +296,7 @@ export function PrendasView({
       {vista === "tabla" && (
         <PrendaTable
           prendas={filtradasActivas}
+          onView={setDetallePrenda}
           onEdit={setEditingPrenda}
           onDuplicate={setDuplicandoPrenda}
           onArchive={setConfirmArchive}
@@ -303,6 +306,7 @@ export function PrendasView({
         <Board
           prendas={filtered}
           proveedores={proveedores}
+          onView={setDetallePrenda}
           onEdit={setEditingPrenda}
           onDuplicate={setDuplicandoPrenda}
           onArchive={setConfirmArchive}
@@ -311,6 +315,7 @@ export function PrendasView({
       {vista === "enviados" && (
         <PrendaTable
           prendas={filtradasEnviadas}
+          onView={setDetallePrenda}
           onEdit={setEditingPrenda}
           onDuplicate={setDuplicandoPrenda}
           onArchive={setConfirmArchive}
@@ -319,6 +324,42 @@ export function PrendasView({
       {vista === "papelera" && (
         <PapeleraTable prendas={prendasArchivadas} />
       )}
+
+      {/* Detalle en solo lectura: se abre al pulsar cualquier parte de la fila.
+          Para modificar hay que pasar explícitamente por "Editar". */}
+      <Dialog
+        open={!!detallePrenda}
+        onOpenChange={(open) => !open && setDetallePrenda(null)}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalle de la prenda</DialogTitle>
+          </DialogHeader>
+          {detallePrenda && (
+            <>
+              <PrendaDetalle prenda={detallePrenda} />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDetallePrenda(null)}
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setEditingPrenda(detallePrenda);
+                    setDetallePrenda(null);
+                  }}
+                >
+                  <PencilIcon /> Editar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!editingPrenda}
