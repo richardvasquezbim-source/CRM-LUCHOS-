@@ -51,6 +51,8 @@ export type Prenda = {
   archivedAt: Date | null;
   /** Fecha de registro. La pone la base de datos al crear la prenda. */
   createdAt: Date;
+  /** Última modificación. Prisma la actualiza sola en cada cambio. */
+  updatedAt: Date;
 };
 
 /** Rangos del filtro por fecha de registro, relativos al día de hoy. */

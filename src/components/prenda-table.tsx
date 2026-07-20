@@ -43,7 +43,7 @@ const alertaClasses: Record<string, string> = {
   ok: "bg-green-100 text-green-800 border-green-200",
 };
 
-type OrdenCampo = "registro" | "cliente" | "entrega";
+type OrdenCampo = "registro" | "actualizado" | "cliente" | "entrega";
 type Orden = { campo: OrdenCampo; dir: "asc" | "desc" };
 
 /** Encabezado clickeable: alterna ascendente/descendente sobre su columna. */
@@ -118,6 +118,9 @@ function Fila({
     >
       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
         {formatFecha(prenda.createdAt)}
+      </td>
+      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+        {formatFecha(prenda.updatedAt)}
       </td>
       <td className="px-3 py-2 font-medium">{prenda.clienteNombre}</td>
       <td className="px-3 py-2 text-muted-foreground">
@@ -359,7 +362,8 @@ function FilaCard({
         Entrega: {formatFecha(prenda.fechaEntregaSolicitada)} · Envío: {envio}
       </p>
       <p className="text-xs text-muted-foreground">
-        Registro: {formatFecha(prenda.createdAt)}
+        Registro: {formatFecha(prenda.createdAt)} · Actualizado:{" "}
+        {formatFecha(prenda.updatedAt)}
       </p>
       {prenda.montoPagado !== null && (
         <p className="text-xs text-muted-foreground">
@@ -422,6 +426,13 @@ export function PrendaTable({
         );
       }
 
+      if (orden.campo === "actualizado") {
+        return (
+          (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) *
+          factor
+        );
+      }
+
       // Entrega: las prendas sin fecha quedan siempre al final, se ordene
       // como se ordene, para que no tapen a las que sí tienen compromiso.
       if (!a.fechaEntregaSolicitada && !b.fechaEntregaSolicitada) return 0;
@@ -443,6 +454,9 @@ export function PrendaTable({
           <tr className="border-b bg-muted/50 text-left">
             <ThOrden campo="registro" orden={orden} onOrdenar={handleOrdenar}>
               Registro
+            </ThOrden>
+            <ThOrden campo="actualizado" orden={orden} onOrdenar={handleOrdenar}>
+              Actualizado
             </ThOrden>
             <ThOrden campo="cliente" orden={orden} onOrdenar={handleOrdenar}>
               Cliente
@@ -478,7 +492,7 @@ export function PrendaTable({
           ))}
           {ordenadas.length === 0 && (
             <tr>
-              <td colSpan={14} className="px-3 py-6 text-center text-muted-foreground">
+              <td colSpan={15} className="px-3 py-6 text-center text-muted-foreground">
                 Sin prendas que coincidan con los filtros.
               </td>
             </tr>

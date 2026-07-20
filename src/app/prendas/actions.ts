@@ -127,6 +127,7 @@ function filaPrendaExcel(p: PrendaConProveedor) {
     Monto: p.montoPagado ?? "",
     Urgente: p.urgente ? "Sí" : "No",
     "Fecha de registro": formatFechaExcel(p.createdAt),
+    "Última actualización": formatFechaExcel(p.updatedAt),
     Nota: p.nota ?? "",
   };
 }
