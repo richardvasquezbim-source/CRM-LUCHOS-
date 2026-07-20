@@ -116,6 +116,9 @@ function Fila({
         )}
       </td>
       <td className="px-3 py-2">{formatMonto(prenda.montoPagado)}</td>
+      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+        {formatFecha(prenda.createdAt)}
+      </td>
       <td className="max-w-[160px] truncate px-3 py-2 text-muted-foreground italic">
         {prenda.nota || ""}
       </td>
@@ -250,6 +253,9 @@ function FilaCard({
       <p className="text-xs text-muted-foreground">
         Entrega: {formatFecha(prenda.fechaEntregaSolicitada)} · Envío: {envio}
       </p>
+      <p className="text-xs text-muted-foreground">
+        Registro: {formatFecha(prenda.createdAt)}
+      </p>
       {prenda.montoPagado !== null && (
         <p className="text-xs text-muted-foreground">
           Monto: {formatMonto(prenda.montoPagado)}
@@ -314,6 +320,7 @@ export function PrendaTable({
             <th className="px-3 py-2 font-medium">Entrega</th>
             <th className="px-3 py-2 font-medium">Alerta</th>
             <th className="px-3 py-2 font-medium">Monto</th>
+            <th className="px-3 py-2 font-medium">Registro</th>
             <th className="px-3 py-2 font-medium">Nota</th>
             <th className="sticky right-0 z-10 border-l bg-muted px-3 py-2 font-medium">
               Acciones
@@ -333,7 +340,7 @@ export function PrendaTable({
           ))}
           {ordenadas.length === 0 && (
             <tr>
-              <td colSpan={13} className="px-3 py-6 text-center text-muted-foreground">
+              <td colSpan={14} className="px-3 py-6 text-center text-muted-foreground">
                 Sin prendas que coincidan con los filtros.
               </td>
             </tr>

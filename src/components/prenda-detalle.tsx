@@ -62,6 +62,7 @@ export function PrendaDetalle({ prenda }: { prenda: Prenda }) {
           {estadoPago.label}
         </Badge>
       </Dato>
+      <Dato label="Fecha de registro">{fecha(prenda.createdAt)}</Dato>
       <Dato label="Fecha de compra">{fecha(prenda.fechaCompra)}</Dato>
       <Dato label="Entrega solicitada">
         {fecha(prenda.fechaEntregaSolicitada)}

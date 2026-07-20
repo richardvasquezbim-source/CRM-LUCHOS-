@@ -86,8 +86,43 @@ export async function restaurarPrenda(id: string) {
   revalidatePath("/");
 }
 
+/**
+ * Borrado DEFINITIVO de todo lo que está en la papelera. No hay vuelta atrás:
+ * solo toca prendas con `archivedAt`, nunca las activas.
+ */
+export async function vaciarPapelera(): Promise<{ eliminadas: number }> {
+  const { count } = await prisma.prenda.deleteMany({
+    where: { archivedAt: { not: null } },
+  });
+  revalidatePath("/");
+  return { eliminadas: count };
+}
+
 function formatFechaExcel(d: Date | null) {
   return d ? d.toISOString().slice(0, 10) : "";
+}
+
+type PrendaConProveedor = Awaited<
+  ReturnType<typeof prisma.prenda.findMany<{ include: { proveedor: true } }>>
+>[number];
+
+function filaPrendaExcel(p: PrendaConProveedor) {
+  return {
+    Cliente: p.clienteNombre,
+    Contacto: p.contacto ?? "",
+    "Diseño / Tela": p.disenoTela,
+    Talla: p.talla ?? "",
+    Tipo: p.tipoPrenda,
+    Proveedor: p.proveedor.nombre,
+    Fabricación: getEstadoFabricacion(p.estadoFabricacion).label,
+    Pago: getEstadoPago(p.estadoPago).label,
+    "Fecha compra": formatFechaExcel(p.fechaCompra),
+    "Fecha entrega solicitada": formatFechaExcel(p.fechaEntregaSolicitada),
+    "Fecha envío real": formatFechaExcel(p.fechaEnvioReal),
+    Monto: p.montoPagado ?? "",
+    "Fecha de registro": formatFechaExcel(p.createdAt),
+    Nota: p.nota ?? "",
+  };
 }
 
 export async function exportarRespaldo(): Promise<{
@@ -102,23 +137,18 @@ export async function exportarRespaldo(): Promise<{
     prisma.proveedor.findMany({ orderBy: { nombre: "asc" } }),
   ]);
 
-  const prendasRows = prendas.map((p) => ({
-    Cliente: p.clienteNombre,
-    Contacto: p.contacto ?? "",
-    "Diseño / Tela": p.disenoTela,
-    Talla: p.talla ?? "",
-    Tipo: p.tipoPrenda,
-    Proveedor: p.proveedor.nombre,
-    Fabricación: getEstadoFabricacion(p.estadoFabricacion).label,
-    Pago: getEstadoPago(p.estadoPago).label,
-    "Fecha compra": formatFechaExcel(p.fechaCompra),
-    "Fecha entrega solicitada": formatFechaExcel(p.fechaEntregaSolicitada),
-    "Fecha envío real": formatFechaExcel(p.fechaEnvioReal),
-    Monto: p.montoPagado ?? "",
-    Nota: p.nota ?? "",
-    Archivada: p.archivedAt ? "Sí" : "No",
-    "Fecha archivado": formatFechaExcel(p.archivedAt),
-  }));
+  // Las archivadas van en su propia hoja: así la hoja "Prendas" queda solo
+  // con lo vigente, sin perder el respaldo de lo que está en la papelera.
+  const prendasRows = prendas
+    .filter((p) => !p.archivedAt)
+    .map((p) => filaPrendaExcel(p));
+
+  const papeleraRows = prendas
+    .filter((p) => p.archivedAt)
+    .map((p) => ({
+      ...filaPrendaExcel(p),
+      "Fecha archivado": formatFechaExcel(p.archivedAt),
+    }));
 
   const proveedoresRows = proveedores.map((p) => ({
     Nombre: p.nombre,
@@ -136,6 +166,13 @@ export async function exportarRespaldo(): Promise<{
     XLSX.utils.json_to_sheet(proveedoresRows),
     "Proveedores"
   );
+  if (papeleraRows.length > 0) {
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(papeleraRows),
+      "Papelera"
+    );
+  }
 
   const base64 = XLSX.write(workbook, { type: "base64", bookType: "xlsx" });
   const filename = `respaldo-crm-petshop-${new Date().toISOString().slice(0, 10)}.xlsx`;

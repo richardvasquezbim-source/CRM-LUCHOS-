@@ -26,8 +26,9 @@ import {
   createPrenda,
   exportarRespaldo,
   updatePrenda,
+  vaciarPapelera,
 } from "@/app/prendas/actions";
-import { PlusIcon, DownloadIcon, PencilIcon } from "lucide-react";
+import { PlusIcon, DownloadIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 export type Prenda = {
@@ -47,7 +48,43 @@ export type Prenda = {
   montoPagado: number | null;
   nota: string | null;
   archivedAt: Date | null;
+  /** Fecha de registro. La pone la base de datos al crear la prenda. */
+  createdAt: Date;
 };
+
+/** Rangos del filtro por fecha de registro, relativos al día de hoy. */
+function pasaFiltroRegistro(createdAt: Date, filtro: string) {
+  if (filtro === "todos") return true;
+
+  const fecha = new Date(createdAt);
+  const ahora = new Date();
+  const inicioHoy = new Date(
+    ahora.getFullYear(),
+    ahora.getMonth(),
+    ahora.getDate()
+  );
+
+  switch (filtro) {
+    case "hoy":
+      return fecha >= inicioHoy;
+    case "7dias": {
+      const desde = new Date(inicioHoy);
+      desde.setDate(desde.getDate() - 6);
+      return fecha >= desde;
+    }
+    case "30dias": {
+      const desde = new Date(inicioHoy);
+      desde.setDate(desde.getDate() - 29);
+      return fecha >= desde;
+    }
+    case "mes":
+      return fecha >= new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    case "anio":
+      return fecha >= new Date(ahora.getFullYear(), 0, 1);
+    default:
+      return true;
+  }
+}
 
 const selectClass =
   "h-8 rounded-md border border-input bg-transparent px-2 text-sm";
@@ -69,12 +106,15 @@ export function PrendasView({
   const [fabricacionFiltro, setFabricacionFiltro] = useState("todos");
   const [pagoFiltro, setPagoFiltro] = useState("todos");
   const [alertaFiltro, setAlertaFiltro] = useState("todos");
+  const [registroFiltro, setRegistroFiltro] = useState("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingPrenda, setEditingPrenda] = useState<Prenda | null>(null);
   const [duplicandoPrenda, setDuplicandoPrenda] = useState<Prenda | null>(null);
   const [detallePrenda, setDetallePrenda] = useState<Prenda | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<Prenda | null>(null);
+  const [confirmVaciar, setConfirmVaciar] = useState(false);
   const [isArchiving, startArchiving] = useTransition();
+  const [isVaciando, startVaciando] = useTransition();
   const [isExporting, startExporting] = useTransition();
 
   const conteoPorProveedor = useMemo(() => {
@@ -105,6 +145,7 @@ export function PrendasView({
         return false;
       }
       if (pagoFiltro !== "todos" && p.estadoPago !== pagoFiltro) return false;
+      if (!pasaFiltroRegistro(p.createdAt, registroFiltro)) return false;
       if (alertaFiltro !== "todos") {
         const alerta = calcularAlerta(
           p.fechaEntregaSolicitada,
@@ -118,7 +159,15 @@ export function PrendasView({
       }
       return true;
     });
-  }, [prendas, query, proveedorFiltro, fabricacionFiltro, pagoFiltro, alertaFiltro]);
+  }, [
+    prendas,
+    query,
+    proveedorFiltro,
+    fabricacionFiltro,
+    pagoFiltro,
+    alertaFiltro,
+    registroFiltro,
+  ]);
 
   // Separamos los pedidos ya "enviado" para que no alarguen la tabla principal;
   // viven en su propia pestaña. El kanban sigue usando `filtered` completo.
@@ -146,6 +195,18 @@ export function PrendasView({
       await archivarPrenda(id);
       toast.success("Prenda archivada");
       setConfirmArchive(null);
+    });
+  }
+
+  function handleVaciarPapelera() {
+    startVaciando(async () => {
+      const { eliminadas } = await vaciarPapelera();
+      toast.success(
+        eliminadas === 1
+          ? "Se eliminó 1 prenda definitivamente"
+          : `Se eliminaron ${eliminadas} prendas definitivamente`
+      );
+      setConfirmVaciar(false);
     });
   }
 
@@ -225,6 +286,18 @@ export function PrendasView({
           <option value="proximo">⚠ Próximo</option>
           <option value="ok">✅ OK</option>
           <option value="sin_alerta">Sin alerta</option>
+        </select>
+        <select
+          value={registroFiltro}
+          onChange={(e) => setRegistroFiltro(e.target.value)}
+          className={selectClass}
+        >
+          <option value="todos">Registradas: siempre</option>
+          <option value="hoy">Registradas: hoy</option>
+          <option value="7dias">Registradas: últimos 7 días</option>
+          <option value="30dias">Registradas: últimos 30 días</option>
+          <option value="mes">Registradas: este mes</option>
+          <option value="anio">Registradas: este año</option>
         </select>
 
         <div className="ml-auto flex items-center gap-2">
@@ -322,7 +395,20 @@ export function PrendasView({
         />
       )}
       {vista === "papelera" && (
-        <PapeleraTable prendas={prendasArchivadas} />
+        <>
+          {prendasArchivadas.length > 0 && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setConfirmVaciar(true)}
+              >
+                <Trash2Icon /> Vaciar papelera ({prendasArchivadas.length})
+              </Button>
+            </div>
+          )}
+          <PapeleraTable prendas={prendasArchivadas} />
+        </>
       )}
 
       {/* Detalle en solo lectura: se abre al pulsar cualquier parte de la fila.
@@ -403,6 +489,51 @@ export function PrendasView({
               onSuccess={() => setDuplicandoPrenda(null)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmVaciar} onOpenChange={setConfirmVaciar}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Vaciar la papelera?</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 text-sm">
+            <p>
+              Se van a eliminar{" "}
+              <strong>
+                {prendasArchivadas.length}{" "}
+                {prendasArchivadas.length === 1 ? "prenda" : "prendas"}
+              </strong>{" "}
+              de forma <strong>definitiva</strong>.
+            </p>
+            <p className="text-muted-foreground">
+              Esto no se puede deshacer: ya no vas a poder restaurarlas ni
+              aparecerán en futuras exportaciones. Si solo querías un Excel
+              limpio, no hace falta vaciar nada — las archivadas ya salen en una
+              hoja aparte llamada &quot;Papelera&quot;.
+            </p>
+            <p className="text-muted-foreground">
+              Si tienes dudas, cierra esto y pulsa antes{" "}
+              <strong>Exportar respaldo</strong>.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmVaciar(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isVaciando}
+              onClick={handleVaciarPapelera}
+            >
+              {isVaciando ? "Eliminando..." : "Sí, eliminar definitivamente"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
