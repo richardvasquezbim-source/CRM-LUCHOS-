@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,14 @@ import {
 } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { EstadoFabricacionKey, EstadoPagoKey } from "@/lib/estados";
-import { CopyIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ChevronsUpDownIcon,
+  CopyIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
@@ -32,6 +39,46 @@ const alertaClasses: Record<string, string> = {
   proximo: "bg-amber-100 text-amber-800 border-amber-200",
   ok: "bg-green-100 text-green-800 border-green-200",
 };
+
+type OrdenCampo = "registro" | "cliente" | "entrega";
+type Orden = { campo: OrdenCampo; dir: "asc" | "desc" };
+
+/** Encabezado clickeable: alterna ascendente/descendente sobre su columna. */
+function ThOrden({
+  campo,
+  orden,
+  onOrdenar,
+  children,
+}: {
+  campo: OrdenCampo;
+  orden: Orden;
+  onOrdenar: (campo: OrdenCampo) => void;
+  children: React.ReactNode;
+}) {
+  const activo = orden.campo === campo;
+
+  return (
+    <th className="px-3 py-2 font-medium">
+      <button
+        type="button"
+        onClick={() => onOrdenar(campo)}
+        className="inline-flex items-center gap-1 hover:underline"
+        title="Ordenar por esta columna"
+      >
+        {children}
+        {activo ? (
+          orden.dir === "asc" ? (
+            <ChevronUpIcon className="size-3.5" />
+          ) : (
+            <ChevronDownIcon className="size-3.5" />
+          )
+        ) : (
+          <ChevronsUpDownIcon className="size-3.5 opacity-40" />
+        )}
+      </button>
+    </th>
+  );
+}
 
 function Fila({
   prenda,
@@ -59,6 +106,9 @@ function Fila({
       className="group cursor-pointer border-b hover:bg-muted/50"
       onClick={() => onView(prenda)}
     >
+      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+        {formatFecha(prenda.createdAt)}
+      </td>
       <td className="px-3 py-2 font-medium">{prenda.clienteNombre}</td>
       <td className="px-3 py-2 text-muted-foreground">
         {prenda.contacto || "-"}
@@ -116,9 +166,6 @@ function Fila({
         )}
       </td>
       <td className="px-3 py-2">{formatMonto(prenda.montoPagado)}</td>
-      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-        {formatFecha(prenda.createdAt)}
-      </td>
       <td className="max-w-[160px] truncate px-3 py-2 text-muted-foreground italic">
         {prenda.nota || ""}
       </td>
@@ -291,17 +338,44 @@ export function PrendaTable({
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
+  // Por defecto se mantiene el orden de siempre: entrega más próxima primero.
+  const [orden, setOrden] = useState<Orden>({ campo: "entrega", dir: "asc" });
+
+  function handleOrdenar(campo: OrdenCampo) {
+    setOrden((actual) =>
+      actual.campo === campo
+        ? { campo, dir: actual.dir === "asc" ? "desc" : "asc" }
+        : { campo, dir: "asc" }
+    );
+  }
+
   const ordenadas = useMemo(() => {
+    const factor = orden.dir === "asc" ? 1 : -1;
+
     return [...prendas].sort((a, b) => {
+      if (orden.campo === "cliente") {
+        return a.clienteNombre.localeCompare(b.clienteNombre, "es") * factor;
+      }
+
+      if (orden.campo === "registro") {
+        return (
+          (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) *
+          factor
+        );
+      }
+
+      // Entrega: las prendas sin fecha quedan siempre al final, se ordene
+      // como se ordene, para que no tapen a las que sí tienen compromiso.
       if (!a.fechaEntregaSolicitada && !b.fechaEntregaSolicitada) return 0;
       if (!a.fechaEntregaSolicitada) return 1;
       if (!b.fechaEntregaSolicitada) return -1;
       return (
-        new Date(a.fechaEntregaSolicitada).getTime() -
-        new Date(b.fechaEntregaSolicitada).getTime()
+        (new Date(a.fechaEntregaSolicitada).getTime() -
+          new Date(b.fechaEntregaSolicitada).getTime()) *
+        factor
       );
     });
-  }, [prendas]);
+  }, [prendas, orden]);
 
   return (
     <>
@@ -309,7 +383,12 @@ export function PrendaTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50 text-left">
-            <th className="px-3 py-2 font-medium">Cliente</th>
+            <ThOrden campo="registro" orden={orden} onOrdenar={handleOrdenar}>
+              Registro
+            </ThOrden>
+            <ThOrden campo="cliente" orden={orden} onOrdenar={handleOrdenar}>
+              Cliente
+            </ThOrden>
             <th className="px-3 py-2 font-medium">Contacto</th>
             <th className="px-3 py-2 font-medium">Diseño / Tela</th>
             <th className="px-3 py-2 font-medium">Talla</th>
@@ -317,10 +396,11 @@ export function PrendaTable({
             <th className="px-3 py-2 font-medium">Proveedor</th>
             <th className="px-3 py-2 font-medium">Fabricación</th>
             <th className="px-3 py-2 font-medium">Pago</th>
-            <th className="px-3 py-2 font-medium">Entrega</th>
+            <ThOrden campo="entrega" orden={orden} onOrdenar={handleOrdenar}>
+              Entrega
+            </ThOrden>
             <th className="px-3 py-2 font-medium">Alerta</th>
             <th className="px-3 py-2 font-medium">Monto</th>
-            <th className="px-3 py-2 font-medium">Registro</th>
             <th className="px-3 py-2 font-medium">Nota</th>
             <th className="sticky right-0 z-10 border-l bg-muted px-3 py-2 font-medium">
               Acciones
