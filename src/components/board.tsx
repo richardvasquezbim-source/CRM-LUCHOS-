@@ -10,10 +10,16 @@ import {
   type EstadoFabricacionKey,
 } from "@/lib/estados";
 import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
-import { updateEstadoFabricacion } from "@/app/prendas/actions";
+import { updateEstadoFabricacion, updateUrgente } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { ProveedorOption } from "@/components/proveedor-manager";
-import { CopyIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  CircleAlertIcon,
+  CopyIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const alertaClasses: Record<string, string> = {
   vencido: "bg-red-100 text-red-800 border-red-200",
@@ -45,7 +51,13 @@ function PrendaCard({
   const estadoPago = getEstadoPago(prenda.estadoPago);
 
   return (
-    <Card className="gap-2 p-3">
+    <Card
+      className={cn(
+        "gap-2 p-3",
+        prenda.urgente &&
+          "border-red-400 bg-red-200 dark:border-red-900 dark:bg-red-950"
+      )}
+    >
       <div className="flex items-start justify-between gap-1">
         <button
           type="button"
@@ -65,6 +77,24 @@ function PrendaCard({
           )}
         </button>
         <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={isPending}
+            title={prenda.urgente ? "Quitar urgente" : "Marcar como urgente"}
+            onClick={() => {
+              startTransition(() => {
+                updateUrgente(prenda.id, !prenda.urgente);
+              });
+            }}
+          >
+            <CircleAlertIcon
+              className={
+                prenda.urgente ? "text-red-600 dark:text-red-400" : "opacity-40"
+              }
+            />
+          </Button>
           <Button
             type="button"
             variant="ghost"

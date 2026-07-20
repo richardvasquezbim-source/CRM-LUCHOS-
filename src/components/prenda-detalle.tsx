@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { CircleAlertIcon } from "lucide-react";
 import { getEstadoFabricacion, getEstadoPago } from "@/lib/estados";
 import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import type { Prenda } from "@/components/prendas-view";
@@ -41,6 +42,16 @@ export function PrendaDetalle({ prenda }: { prenda: Prenda }) {
 
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+      {prenda.urgente && (
+        <div className="col-span-2">
+          <Badge
+            variant="outline"
+            className="border-red-200 bg-red-100 text-red-800"
+          >
+            <CircleAlertIcon className="size-3.5" /> Urgente
+          </Badge>
+        </div>
+      )}
       <Dato label="Cliente">
         <span className="font-medium">{prenda.clienteNombre}</span>
       </Dato>

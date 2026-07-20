@@ -47,6 +47,7 @@ export type Prenda = {
   fechaEnvioReal: Date | null;
   montoPagado: number | null;
   nota: string | null;
+  urgente: boolean;
   archivedAt: Date | null;
   /** Fecha de registro. La pone la base de datos al crear la prenda. */
   createdAt: Date;

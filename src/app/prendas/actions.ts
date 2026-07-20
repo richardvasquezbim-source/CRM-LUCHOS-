@@ -55,6 +55,11 @@ export async function updateEstadoPago(id: string, estadoPago: EstadoPagoKey) {
   revalidatePath("/");
 }
 
+export async function updateUrgente(id: string, urgente: boolean) {
+  await prisma.prenda.update({ where: { id }, data: { urgente } });
+  revalidatePath("/");
+}
+
 export async function createProveedor(
   nombre: string
 ): Promise<{ error: string } | { error?: undefined; id: string }> {
@@ -120,6 +125,7 @@ function filaPrendaExcel(p: PrendaConProveedor) {
     "Fecha entrega solicitada": formatFechaExcel(p.fechaEntregaSolicitada),
     "Fecha envío real": formatFechaExcel(p.fechaEnvioReal),
     Monto: p.montoPagado ?? "",
+    Urgente: p.urgente ? "Sí" : "No",
     "Fecha de registro": formatFechaExcel(p.createdAt),
     Nota: p.nota ?? "",
   };

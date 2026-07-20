@@ -13,6 +13,7 @@ import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
 import {
   updateEstadoFabricacion,
   updateEstadoPago,
+  updateUrgente,
 } from "@/app/prendas/actions";
 import type { Prenda } from "@/components/prendas-view";
 import type { EstadoFabricacionKey, EstadoPagoKey } from "@/lib/estados";
@@ -20,10 +21,12 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   ChevronsUpDownIcon,
+  CircleAlertIcon,
   CopyIcon,
   PencilIcon,
   Trash2Icon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
@@ -103,7 +106,14 @@ function Fila({
     // Toda la fila abre el detalle; los controles interactivos de dentro
     // detienen la propagación para no abrirlo sin querer.
     <tr
-      className="group cursor-pointer border-b hover:bg-muted/50"
+      className={cn(
+        "group cursor-pointer border-b",
+        // Rojo bien marcado: sobre el fondo rosa del tema, un tono claro
+        // como red-50 no se distingue.
+        prenda.urgente
+          ? "bg-red-200 hover:bg-red-300 dark:bg-red-950 dark:hover:bg-red-900"
+          : "hover:bg-muted/50"
+      )}
       onClick={() => onView(prenda)}
     >
       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
@@ -172,10 +182,33 @@ function Fila({
       {/* Columna fija a la derecha: la tabla es ancha y scrollea en horizontal,
           así las acciones quedan siempre a la vista. */}
       <td
-        className="sticky right-0 z-10 border-l bg-background px-3 py-2 group-hover:bg-muted"
+        className={cn(
+          "sticky right-0 z-10 border-l px-3 py-2",
+          prenda.urgente
+            ? "bg-red-200 group-hover:bg-red-300 dark:bg-red-950 dark:group-hover:bg-red-900"
+            : "bg-background group-hover:bg-muted"
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={isPending}
+            title={prenda.urgente ? "Quitar urgente" : "Marcar como urgente"}
+            onClick={() => {
+              startTransition(() => {
+                updateUrgente(prenda.id, !prenda.urgente);
+              });
+            }}
+          >
+            <CircleAlertIcon
+              className={
+                prenda.urgente ? "text-red-600 dark:text-red-400" : "opacity-40"
+              }
+            />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -222,6 +255,7 @@ function FilaCard({
   onDuplicate: (prenda: Prenda) => void;
   onArchive: (prenda: Prenda) => void;
 }) {
+  const [isPending, startTransition] = useTransition();
   const alerta = calcularAlerta(
     prenda.fechaEntregaSolicitada,
     prenda.estadoFabricacion
@@ -243,7 +277,12 @@ function FilaCard({
           onView(prenda);
         }
       }}
-      className="cursor-pointer rounded-xl border bg-card p-3 text-left hover:bg-muted/50"
+      className={cn(
+        "cursor-pointer rounded-xl border p-3 text-left",
+        prenda.urgente
+          ? "border-red-400 bg-red-200 hover:bg-red-300 dark:border-red-900 dark:bg-red-950 dark:hover:bg-red-900"
+          : "bg-card hover:bg-muted/50"
+      )}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -256,6 +295,25 @@ function FilaCard({
           </p>
         </div>
         <div className="flex items-center gap-0.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={isPending}
+            title={prenda.urgente ? "Quitar urgente" : "Marcar como urgente"}
+            onClick={(e) => {
+              e.stopPropagation();
+              startTransition(() => {
+                updateUrgente(prenda.id, !prenda.urgente);
+              });
+            }}
+          >
+            <CircleAlertIcon
+              className={
+                prenda.urgente ? "text-red-600 dark:text-red-400" : "opacity-40"
+              }
+            />
+          </Button>
           <Button
             type="button"
             variant="ghost"
