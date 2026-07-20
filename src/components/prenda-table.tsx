@@ -31,14 +31,10 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatMonto } from "@/lib/formato";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
-}
-
-function formatMonto(m: number | null) {
-  if (m === null || m === undefined) return "-";
-  return m.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
 }
 
 const alertaClasses: Record<string, string> = {

@@ -48,7 +48,7 @@ export function formatFechaSoloDia(
   fecha: Date | string | null | undefined
 ): string | null {
   if (!fecha) return null;
-  return new Date(fecha).toLocaleDateString("es-MX", {
+  return new Date(fecha).toLocaleDateString("es-PE", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -107,7 +107,7 @@ export function calcularAlerta(
   }
 
   if (dias <= DIAS_PROXIMO) {
-    const fechaCorta = new Date(entregaUTC).toLocaleDateString("es-MX", {
+    const fechaCorta = new Date(entregaUTC).toLocaleDateString("es-PE", {
       day: "2-digit",
       month: "2-digit",
       timeZone: "UTC",

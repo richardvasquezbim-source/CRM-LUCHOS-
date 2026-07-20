@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CircleAlertIcon } from "lucide-react";
+import { formatMonto } from "@/lib/formato";
 import { getEstadoFabricacion, getEstadoPago } from "@/lib/estados";
 import {
   calcularAlerta,
@@ -28,11 +29,6 @@ function Dato({ label, children }: { label: string; children: ReactNode }) {
 
 function fecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
-}
-
-function monto(m: number | null) {
-  if (m === null || m === undefined) return "-";
-  return m.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
 }
 
 /** Vista de solo lectura de una prenda. Para editar hay que pulsar "Editar". */
@@ -88,7 +84,7 @@ export function PrendaDetalle({ prenda }: { prenda: Prenda }) {
         {fecha(prenda.fechaEntregaSolicitada)}
       </Dato>
       <Dato label="Envío real">{fecha(prenda.fechaEnvioReal)}</Dato>
-      <Dato label="Monto pagado">{monto(prenda.montoPagado)}</Dato>
+      <Dato label="Monto pagado">{formatMonto(prenda.montoPagado)}</Dato>
       {alerta && (
         <Dato label="Alerta">
           <Badge variant="outline" className={alertaClasses[alerta.nivel]}>
