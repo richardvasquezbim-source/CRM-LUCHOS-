@@ -9,7 +9,11 @@ import {
   getEstadoFabricacion,
   getEstadoPago,
 } from "@/lib/estados";
-import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
+import {
+  calcularAlerta,
+  formatFechaSoloDia,
+  formatMarcaTiempo,
+} from "@/lib/alerta";
 import {
   updateEstadoFabricacion,
   updateEstadoPago,
@@ -117,10 +121,10 @@ function Fila({
       onClick={() => onView(prenda)}
     >
       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-        {formatFecha(prenda.createdAt)}
+        {formatMarcaTiempo(prenda.createdAt)}
       </td>
       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-        {formatFecha(prenda.updatedAt)}
+        {formatMarcaTiempo(prenda.updatedAt)}
       </td>
       <td className="px-3 py-2 font-medium">{prenda.clienteNombre}</td>
       <td className="px-3 py-2 text-muted-foreground">
@@ -362,8 +366,8 @@ function FilaCard({
         Entrega: {formatFecha(prenda.fechaEntregaSolicitada)} · Envío: {envio}
       </p>
       <p className="text-xs text-muted-foreground">
-        Registro: {formatFecha(prenda.createdAt)} · Actualizado:{" "}
-        {formatFecha(prenda.updatedAt)}
+        Registro: {formatMarcaTiempo(prenda.createdAt)} · Actualizado:{" "}
+        {formatMarcaTiempo(prenda.updatedAt)}
       </p>
       {prenda.montoPagado !== null && (
         <p className="text-xs text-muted-foreground">

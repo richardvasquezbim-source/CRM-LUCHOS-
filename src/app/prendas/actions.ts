@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { prendaSchema, type PrendaFormState } from "@/lib/validations/prenda";
+import { formatMarcaTiempoISO } from "@/lib/alerta";
 import {
   getEstadoFabricacion,
   getEstadoPago,
@@ -126,8 +127,8 @@ function filaPrendaExcel(p: PrendaConProveedor) {
     "Fecha envío real": formatFechaExcel(p.fechaEnvioReal),
     Monto: p.montoPagado ?? "",
     Urgente: p.urgente ? "Sí" : "No",
-    "Fecha de registro": formatFechaExcel(p.createdAt),
-    "Última actualización": formatFechaExcel(p.updatedAt),
+    "Fecha de registro": formatMarcaTiempoISO(p.createdAt),
+    "Última actualización": formatMarcaTiempoISO(p.updatedAt),
     Nota: p.nota ?? "",
   };
 }

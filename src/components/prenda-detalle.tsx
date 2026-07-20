@@ -4,7 +4,11 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CircleAlertIcon } from "lucide-react";
 import { getEstadoFabricacion, getEstadoPago } from "@/lib/estados";
-import { calcularAlerta, formatFechaSoloDia } from "@/lib/alerta";
+import {
+  calcularAlerta,
+  formatFechaSoloDia,
+  formatMarcaTiempo,
+} from "@/lib/alerta";
 import type { Prenda } from "@/components/prendas-view";
 
 const alertaClasses: Record<string, string> = {
@@ -73,8 +77,12 @@ export function PrendaDetalle({ prenda }: { prenda: Prenda }) {
           {estadoPago.label}
         </Badge>
       </Dato>
-      <Dato label="Fecha de registro">{fecha(prenda.createdAt)}</Dato>
-      <Dato label="Última actualización">{fecha(prenda.updatedAt)}</Dato>
+      <Dato label="Fecha de registro">
+        {formatMarcaTiempo(prenda.createdAt, { conHora: true })}
+      </Dato>
+      <Dato label="Última actualización">
+        {formatMarcaTiempo(prenda.updatedAt, { conHora: true })}
+      </Dato>
       <Dato label="Fecha de compra">{fecha(prenda.fechaCompra)}</Dato>
       <Dato label="Entrega solicitada">
         {fecha(prenda.fechaEntregaSolicitada)}

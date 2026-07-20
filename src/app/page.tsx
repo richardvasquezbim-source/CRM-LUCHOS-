@@ -17,7 +17,9 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-4 p-6">
+    // Ancho generoso: la tabla tiene muchas columnas y con 7xl (1280px)
+    // quedaban varias fuera de la vista en pantallas grandes.
+    <main className="mx-auto flex max-w-[1800px] flex-col gap-4 p-6">
       <h1 className="text-2xl font-semibold">Prendas</h1>
       <PrendasView
         prendas={prendas}
