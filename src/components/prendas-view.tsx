@@ -28,7 +28,14 @@ import {
   updatePrenda,
   vaciarPapelera,
 } from "@/app/prendas/actions";
-import { PlusIcon, DownloadIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  PlusIcon,
+  DownloadIcon,
+  PencilIcon,
+  Trash2Icon,
+  ScissorsIcon,
+} from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 export type Prenda = {
@@ -339,6 +346,9 @@ export function PrendasView({
             onClick={handleExport}
           >
             <DownloadIcon /> Exportar respaldo
+          </Button>
+          <Button variant="outline" render={<Link href="/telas" />}>
+            <ScissorsIcon /> Telas
           </Button>
           <ProveedorManager proveedores={proveedores} />
           <Dialog

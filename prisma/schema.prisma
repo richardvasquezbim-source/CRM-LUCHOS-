@@ -19,6 +19,32 @@ model Proveedor {
   prendas Prenda[]
 }
 
+// Telas disponibles en casa, para producción. Reemplaza la hoja
+// "TELAS EN CASA". `metrajeDisponible` se guarda en su `unidad` original
+// (metros o kg); la conversión a metros para cálculos vive en el código.
+model Tela {
+  id                String    @id @default(cuid())
+  nombre            String
+  costoPorMetro     Float?
+  metrajeDisponible Float     @default(0)
+  unidad            String    @default("metros") // "metros" | "kg"
+  unidadOriginal    String? // texto libre tal cual se anotó, solo para mostrar
+  costoTotal        Float?
+  fechaCompra       DateTime?
+  fechaEnvio        DateTime?
+  estado            String    @default("disponible") // "disponible" | "agotada"
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// Metros de tela que consume cada talla. Tabla de configuración editable
+// (no una fórmula): la relación real no es lineal. Dato inicial para
+// algodón/felpa a ~S/16/m.
+model ConsumoTalla {
+  talla  Int   @id
+  metros Float
+}
+
 model Prenda {
   id                     String    @id @default(cuid())
   clienteNombre          String
