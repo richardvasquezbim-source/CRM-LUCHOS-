@@ -32,6 +32,17 @@ export const prendaSchema = z.object({
   fechaEnvioReal: optionalDate,
   montoPagado: optionalMonto,
   nota: optionalString,
+  // Producción / pedido a Ericka (Fase 2), todo opcional.
+  telaId: optionalString,
+  tipoPedido: z.preprocess(
+    emptyToUndefined,
+    z.enum(["reposicion", "nueva"]).optional()
+  ),
+  catalogoGrupo: optionalString,
+  tallaNumero: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().int().min(0).max(10).optional()
+  ),
 });
 
 export type PrendaInput = z.infer<typeof prendaSchema>;

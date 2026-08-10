@@ -10,9 +10,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PrendaForm } from "@/components/prenda-form";
+import { PrendaForm, type TelaOption } from "@/components/prenda-form";
 import { PrendaTable } from "@/components/prenda-table";
 import { PrendaDetalle } from "@/components/prenda-detalle";
+import type { CatalogoModelo } from "@/lib/catalogo";
 import { Board } from "@/components/board";
 import { PapeleraTable } from "@/components/papelera-table";
 import {
@@ -60,6 +61,12 @@ export type Prenda = {
   createdAt: Date;
   /** Última modificación. Prisma la actualiza sola en cada cambio. */
   updatedAt: Date;
+  // Producción (Fase 2)
+  telaId: string | null;
+  tela: { id: string; nombre: string } | null;
+  tipoPedido: string | null;
+  catalogoGrupo: string | null;
+  tallaNumero: number | null;
 };
 
 /** Rangos del filtro por fecha de registro, relativos al día de hoy. */
@@ -103,10 +110,14 @@ export function PrendasView({
   prendas,
   prendasArchivadas,
   proveedores,
+  telas,
+  catalogoModelos,
 }: {
   prendas: Prenda[];
   prendasArchivadas: Prenda[];
   proveedores: ProveedorOption[];
+  telas: TelaOption[];
+  catalogoModelos: CatalogoModelo[];
 }) {
   const [vista, setVista] = useState<
     "tabla" | "kanban" | "enviados" | "papelera"
@@ -369,6 +380,8 @@ export function PrendasView({
               </DialogHeader>
               <PrendaForm
                 proveedores={proveedores}
+                telas={telas}
+                catalogoModelos={catalogoModelos}
                 action={createPrenda}
                 submitLabel="Crear prenda"
                 draftKey="nueva"
@@ -436,7 +449,10 @@ export function PrendasView({
           </DialogHeader>
           {detallePrenda && (
             <>
-              <PrendaDetalle prenda={detallePrenda} />
+              <PrendaDetalle
+                prenda={detallePrenda}
+                catalogoModelos={catalogoModelos}
+              />
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
@@ -473,6 +489,8 @@ export function PrendasView({
             <PrendaForm
               prenda={editingPrenda}
               proveedores={proveedores}
+              telas={telas}
+              catalogoModelos={catalogoModelos}
               action={boundUpdate}
               submitLabel="Guardar cambios"
               draftKey={`editar-${editingPrenda.id}`}
@@ -496,6 +514,8 @@ export function PrendasView({
             <PrendaForm
               prenda={duplicandoPrenda}
               proveedores={proveedores}
+              telas={telas}
+              catalogoModelos={catalogoModelos}
               action={createPrenda}
               submitLabel="Crear copia"
               draftKey={`duplicar-${duplicandoPrenda.id}`}

@@ -22,6 +22,8 @@ import {
   initialPrendaFormState,
   type PrendaFormState,
 } from "@/lib/validations/prenda";
+import { SelectorCatalogo } from "@/components/selector-catalogo";
+import type { CatalogoModelo } from "@/lib/catalogo";
 
 export type PrendaFormValues = {
   clienteNombre: string;
@@ -37,6 +39,10 @@ export type PrendaFormValues = {
   fechaEnvioReal: Date | string | null;
   montoPagado: number | null;
   nota: string | null;
+  telaId?: string | null;
+  tipoPedido?: string | null;
+  catalogoGrupo?: string | null;
+  tallaNumero?: number | null;
 };
 
 export type ProveedorOption = {
@@ -44,6 +50,27 @@ export type ProveedorOption = {
   nombre: string;
   activo: boolean;
 };
+
+export type TelaOption = {
+  id: string;
+  nombre: string;
+  estado: string;
+};
+
+const TALLAS_PRODUCCION = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+const selectClass =
+  "h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm";
+
+/** Si el texto de talla es un entero 0-10, lo devuelve como string; si no, "". */
+function tallaNumDesdeTexto(talla: string | null | undefined): string {
+  const t = (talla ?? "").trim();
+  if (/^\d+$/.test(t)) {
+    const n = Number(t);
+    if (n >= 0 && n <= 10) return String(n);
+  }
+  return "";
+}
 
 /** Valores del formulario como strings, tal cual viajan en el FormData. */
 type FormValues = {
@@ -60,6 +87,10 @@ type FormValues = {
   fechaEnvioReal: string;
   montoPagado: string;
   nota: string;
+  telaId: string;
+  tipoPedido: string;
+  catalogoGrupo: string;
+  tallaNumero: string;
 };
 
 function toDateInputValue(value: Date | string | null | undefined) {
@@ -90,6 +121,14 @@ function buildInitialValues(
         ? ""
         : String(prenda.montoPagado),
     nota: prenda?.nota ?? "",
+    telaId: prenda?.telaId ?? "",
+    tipoPedido: prenda?.tipoPedido ?? "",
+    catalogoGrupo: prenda?.catalogoGrupo ?? "",
+    // Si no hay talla numérica guardada, la deducimos del texto de talla.
+    tallaNumero:
+      prenda?.tallaNumero !== null && prenda?.tallaNumero !== undefined
+        ? String(prenda.tallaNumero)
+        : tallaNumDesdeTexto(prenda?.talla),
   };
 }
 
@@ -107,6 +146,8 @@ function leerBorrador(storageKey: string | null): Partial<FormValues> | null {
 export function PrendaForm({
   prenda,
   proveedores,
+  telas = [],
+  catalogoModelos = [],
   action,
   onSuccess,
   submitLabel = "Guardar",
@@ -114,6 +155,8 @@ export function PrendaForm({
 }: {
   prenda?: PrendaFormValues;
   proveedores: ProveedorOption[];
+  telas?: TelaOption[];
+  catalogoModelos?: CatalogoModelo[];
   action: (
     prevState: PrendaFormState,
     formData: FormData
@@ -419,6 +462,82 @@ export function PrendaForm({
             rows={3}
           />
         </Field>
+
+        {/* Producción — datos para el pedido a Ericka. Todo opcional. */}
+        <div className="flex flex-col gap-3 rounded-md border border-dashed p-3">
+          <p className="text-sm font-medium">🧵 Producción (opcional)</p>
+
+          <Field orientation="responsive">
+            <FieldLabel htmlFor="telaId">Tela</FieldLabel>
+            <select
+              id="telaId"
+              name="telaId"
+              value={values.telaId}
+              onChange={(e) => set("telaId", e.target.value)}
+              className={selectClass}
+            >
+              <option value="">— Sin tela —</option>
+              {telas
+                .filter((t) => t.estado === "disponible" || t.id === values.telaId)
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre}
+                    {t.estado === "agotada" ? " (agotada)" : ""}
+                  </option>
+                ))}
+            </select>
+          </Field>
+
+          <Field orientation="responsive">
+            <FieldLabel htmlFor="tipoPedido">Tipo de pedido</FieldLabel>
+            <select
+              id="tipoPedido"
+              name="tipoPedido"
+              value={values.tipoPedido}
+              onChange={(e) => {
+                const v = e.target.value;
+                set("tipoPedido", v);
+                // Al dejar de ser reposición, se limpia el modelo del catálogo.
+                if (v !== "reposicion") set("catalogoGrupo", "");
+              }}
+              className={selectClass}
+            >
+              <option value="">— Sin especificar —</option>
+              <option value="reposicion">Reposición</option>
+              <option value="nueva">Prenda nueva</option>
+            </select>
+          </Field>
+
+          <Field orientation="responsive">
+            <FieldLabel htmlFor="tallaNumero">Talla (0–10)</FieldLabel>
+            <select
+              id="tallaNumero"
+              name="tallaNumero"
+              value={values.tallaNumero}
+              onChange={(e) => set("tallaNumero", e.target.value)}
+              className={selectClass}
+            >
+              <option value="">—</option>
+              {TALLAS_PRODUCCION.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {values.tipoPedido === "reposicion" && (
+            <Field>
+              <FieldLabel>Diseño del catálogo (para revisar stock)</FieldLabel>
+              <SelectorCatalogo
+                modelos={catalogoModelos}
+                value={values.catalogoGrupo}
+                onChange={(grupo) => set("catalogoGrupo", grupo)}
+              />
+            </Field>
+          )}
+          <input type="hidden" name="catalogoGrupo" value={values.catalogoGrupo} />
+        </div>
 
         <Button type="submit" disabled={pending}>
           {pending ? "Guardando..." : submitLabel}

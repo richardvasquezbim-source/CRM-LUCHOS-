@@ -52,9 +52,13 @@ export function TelasView({ telas }: { telas: Tela[] }) {
     if (!confirmDelete) return;
     const id = confirmDelete.id;
     startDeleting(async () => {
-      await eliminarTela(id);
-      toast.success("Tela eliminada");
-      setConfirmDelete(null);
+      const res = await eliminarTela(id);
+      if (res.ok) {
+        toast.success("Tela eliminada");
+        setConfirmDelete(null);
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 

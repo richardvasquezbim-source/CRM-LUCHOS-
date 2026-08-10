@@ -35,6 +35,7 @@ model Tela {
   estado            String    @default("disponible") // "disponible" | "agotada"
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  prendas           Prenda[]
 }
 
 // Metros de tela que consume cada talla. Tabla de configuración editable
@@ -65,4 +66,11 @@ model Prenda {
   archivedAt             DateTime?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
+
+  // Producción / pedido a Ericka (Fase 2). Todo opcional y aditivo.
+  telaId        String?
+  tela          Tela?   @relation(fields: [telaId], references: [id])
+  tipoPedido    String? // "reposicion" | "nueva"
+  catalogoGrupo String? // identifica el modelo del catálogo (solo reposición)
+  tallaNumero   Int? // talla 0-10 para el generador de producción
 }

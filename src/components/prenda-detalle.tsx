@@ -11,6 +11,12 @@ import {
   formatMarcaTiempo,
 } from "@/lib/alerta";
 import type { Prenda } from "@/components/prendas-view";
+import type { CatalogoModelo } from "@/lib/catalogo";
+
+const TIPO_PEDIDO_LABEL: Record<string, string> = {
+  reposicion: "Reposición",
+  nueva: "Prenda nueva",
+};
 
 const alertaClasses: Record<string, string> = {
   vencido: "bg-red-100 text-red-800 border-red-200",
@@ -32,13 +38,29 @@ function fecha(d: Date | null) {
 }
 
 /** Vista de solo lectura de una prenda. Para editar hay que pulsar "Editar". */
-export function PrendaDetalle({ prenda }: { prenda: Prenda }) {
+export function PrendaDetalle({
+  prenda,
+  catalogoModelos = [],
+}: {
+  prenda: Prenda;
+  catalogoModelos?: CatalogoModelo[];
+}) {
   const estadoFabricacion = getEstadoFabricacion(prenda.estadoFabricacion);
   const estadoPago = getEstadoPago(prenda.estadoPago);
   const alerta = calcularAlerta(
     prenda.fechaEntregaSolicitada,
     prenda.estadoFabricacion
   );
+
+  const tieneProduccion =
+    prenda.tela ||
+    prenda.tipoPedido ||
+    prenda.tallaNumero !== null ||
+    prenda.catalogoGrupo;
+  const modeloCatalogo = prenda.catalogoGrupo
+    ? catalogoModelos.find((m) => m.grupo === prenda.catalogoGrupo)?.label ??
+      prenda.catalogoGrupo
+    : null;
 
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -95,6 +117,26 @@ export function PrendaDetalle({ prenda }: { prenda: Prenda }) {
       <div className="col-span-2">
         <Dato label="Nota">{prenda.nota || "-"}</Dato>
       </div>
+
+      {tieneProduccion && (
+        <div className="col-span-2 mt-1 grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-dashed p-3">
+          <div className="col-span-2 text-xs font-medium text-muted-foreground">
+            🧵 Producción
+          </div>
+          <Dato label="Tela">{prenda.tela?.nombre ?? "-"}</Dato>
+          <Dato label="Tipo de pedido">
+            {prenda.tipoPedido
+              ? TIPO_PEDIDO_LABEL[prenda.tipoPedido] ?? prenda.tipoPedido
+              : "-"}
+          </Dato>
+          <Dato label="Talla (producción)">
+            {prenda.tallaNumero !== null ? prenda.tallaNumero : "-"}
+          </Dato>
+          {modeloCatalogo && (
+            <Dato label="Diseño del catálogo">{modeloCatalogo}</Dato>
+          )}
+        </div>
+      )}
     </dl>
   );
 }

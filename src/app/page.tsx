@@ -1,20 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { PrendasView } from "@/components/prendas-view";
+import { getCatalogoModelos } from "@/lib/catalogo";
 
 export default async function Home() {
-  const [prendas, prendasArchivadas, proveedores] = await Promise.all([
-    prisma.prenda.findMany({
-      where: { archivedAt: null },
-      include: { proveedor: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.prenda.findMany({
-      where: { archivedAt: { not: null } },
-      include: { proveedor: true },
-      orderBy: { archivedAt: "desc" },
-    }),
-    prisma.proveedor.findMany({ orderBy: { nombre: "asc" } }),
-  ]);
+  const [prendas, prendasArchivadas, proveedores, telas, catalogoModelos] =
+    await Promise.all([
+      prisma.prenda.findMany({
+        where: { archivedAt: null },
+        include: { proveedor: true, tela: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.prenda.findMany({
+        where: { archivedAt: { not: null } },
+        include: { proveedor: true, tela: true },
+        orderBy: { archivedAt: "desc" },
+      }),
+      prisma.proveedor.findMany({ orderBy: { nombre: "asc" } }),
+      prisma.tela.findMany({ orderBy: { nombre: "asc" } }),
+      getCatalogoModelos(),
+    ]);
 
   return (
     // Ancho generoso: la tabla tiene muchas columnas y con 7xl (1280px)
@@ -25,6 +29,8 @@ export default async function Home() {
         prendas={prendas}
         prendasArchivadas={prendasArchivadas}
         proveedores={proveedores}
+        telas={telas}
+        catalogoModelos={catalogoModelos}
       />
     </main>
   );
