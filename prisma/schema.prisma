@@ -36,6 +36,31 @@ model Tela {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   prendas           Prenda[]
+  pedidosEricka     PedidoEricka[]
+}
+
+// Cabecera del borrador de "pedido para Ericka" generado para una tela.
+model PedidoEricka {
+  id         String             @id @default(cuid())
+  telaId     String
+  tela       Tela               @relation(fields: [telaId], references: [id], onDelete: Cascade)
+  estado     String             @default("borrador") // borrador | enviado | entregado
+  generadoEn DateTime           @default(now())
+  enviadoEn  DateTime?
+  items      PedidoErickaItem[]
+}
+
+// Cada fila de la tabla (talla + tipo de prenda + cantidad), editable a mano.
+model PedidoErickaItem {
+  id              String       @id @default(cuid())
+  pedidoErickaId  String
+  pedido          PedidoEricka @relation(fields: [pedidoErickaId], references: [id], onDelete: Cascade)
+  talla           Int
+  tipoPrenda      String
+  cantidad        Int          @default(1)
+  esPedidoCliente Boolean      @default(false) // resaltado = pedido real de cliente
+  clienteNombre   String?
+  orden           Int          @default(0)
 }
 
 // Metros de tela que consume cada talla. Tabla de configuración editable

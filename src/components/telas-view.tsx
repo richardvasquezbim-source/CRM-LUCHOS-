@@ -15,7 +15,13 @@ import { TelaForm } from "@/components/tela-form";
 import { createTela, updateTela, eliminarTela } from "@/app/telas/actions";
 import { formatFechaSoloDia } from "@/lib/alerta";
 import { formatMonto } from "@/lib/formato";
-import { PlusIcon, PencilIcon, Trash2Icon, ArrowLeftIcon } from "lucide-react";
+import {
+  PlusIcon,
+  PencilIcon,
+  Trash2Icon,
+  ArrowLeftIcon,
+  ScissorsIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export type Tela = {
@@ -144,6 +150,13 @@ export function TelasView({ telas }: { telas: Tela[] }) {
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-0.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<Link href={`/pedidos-ericka/${t.id}`} />}
+                    >
+                      <ScissorsIcon /> Pedido a Ericka
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
