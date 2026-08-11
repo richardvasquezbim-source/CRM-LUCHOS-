@@ -165,6 +165,7 @@ export async function marcarPedidoEnviado(pedidoId: string) {
 
   revalidatePath(`/pedidos-ericka/${pedido.telaId}`);
   revalidatePath("/telas");
+  revalidatePath("/"); // la tela pudo quedar agotada y salir del formulario
 }
 
 export async function eliminarPedidoEricka(pedidoId: string) {

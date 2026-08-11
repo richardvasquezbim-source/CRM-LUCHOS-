@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { telaSchema, type TelaFormState } from "@/lib/validations/tela";
 
+// Las telas aparecen en /telas y en el desplegable del formulario de prendas
+// (página principal "/"), así que ambos se refrescan en cada cambio.
+function revalidarTelas() {
+  revalidatePath("/telas");
+  revalidatePath("/");
+}
+
 export async function createTela(
   _prevState: TelaFormState,
   formData: FormData
@@ -13,7 +20,7 @@ export async function createTela(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   await prisma.tela.create({ data: parsed.data });
-  revalidatePath("/telas");
+  revalidarTelas();
   return { errors: {}, success: true };
 }
 
@@ -27,7 +34,7 @@ export async function updateTela(
     return { errors: parsed.error.flatten().fieldErrors };
   }
   await prisma.tela.update({ where: { id }, data: parsed.data });
-  revalidatePath("/telas");
+  revalidarTelas();
   return { errors: {}, success: true };
 }
 
@@ -44,6 +51,6 @@ export async function eliminarTela(
     };
   }
   await prisma.tela.delete({ where: { id } });
-  revalidatePath("/telas");
+  revalidarTelas();
   return { ok: true };
 }
