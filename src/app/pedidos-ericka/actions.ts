@@ -9,9 +9,13 @@ import {
   type PedidoPendiente,
 } from "@/lib/generador-ericka";
 
-// Un pedido "pendiente" de mandar a Ericka = vinculado a la tela, activo y
-// todavía en "compra de tela pendiente" (aún no se le entregó tela).
-const ESTADO_PENDIENTE = "compra_tela_pendiente";
+// Un pedido cuenta para el pedido a Ericka si está vinculado a la tela, no
+// archivado y todavía no fue enviado al cliente (cualquier estado de
+// fabricación menos "enviado"). Se puede coser aunque la tela ya se entregó.
+const WHERE_PENDIENTE = {
+  archivedAt: null,
+  estadoFabricacion: { not: "enviado" },
+} as const;
 
 type ItemEntrada = {
   talla: number;
@@ -32,7 +36,7 @@ export async function generarPedidoEricka(telaId: string) {
   if (!tela) return;
 
   const prendas = await prisma.prenda.findMany({
-    where: { telaId, archivedAt: null, estadoFabricacion: ESTADO_PENDIENTE },
+    where: { telaId, ...WHERE_PENDIENTE },
     select: {
       clienteNombre: true,
       tipoPrenda: true,

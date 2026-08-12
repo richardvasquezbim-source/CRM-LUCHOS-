@@ -51,6 +51,17 @@ export function generarItems({
   const telaGrande = esTelaGrande(metrajeDisponible, unidad);
   const consumoDe = (t: number) => consumo[t] ?? 0;
 
+  // Une tipos que solo difieren en mayúsculas ("PIJAMA" y "Pijama" → una
+  // sola columna). Se queda con la primera forma que aparece.
+  const canonicalMap = new Map<string, string>();
+  for (const p of pedidos) {
+    const raw = (p.tipoPrenda ?? "").trim();
+    const key = raw.toLowerCase();
+    if (raw && !canonicalMap.has(key)) canonicalMap.set(key, raw);
+  }
+  const canonical = (tipo: string | null | undefined) =>
+    canonicalMap.get((tipo ?? "").trim().toLowerCase()) ?? (tipo ?? "").trim();
+
   const items: ItemGenerado[] = [];
   // Ahora una talla puede aparecer para varios tipos de prenda; la clave de
   // "ya cubierta" es talla + tipo (una celda de la matriz).
@@ -80,22 +91,23 @@ export function generarItems({
 
   for (const p of pedidosOrdenados) {
     const t = p.tallaNumero as number;
+    const tipoCanon = canonical(p.tipoPrenda);
     items.push({
       talla: t,
-      tipoPrenda: p.tipoPrenda,
+      tipoPrenda: tipoCanon,
       cantidad: 1,
       esPedidoCliente: true,
       clienteNombre: p.clienteNombre,
       orden: orden++,
     });
-    cubiertas.add(clave(t, p.tipoPrenda));
+    cubiertas.add(clave(t, tipoCanon));
     metrajeUsado += consumoDe(t);
   }
 
   // 2. Sugerencias POR TIPO DE PRENDA: de una misma tela pueden salir varias
   // prendas (Polera, Pijama…), y cada una lleva su propia tanda de tallas.
   const tipos = [
-    ...new Set(pedidos.map((p) => (p.tipoPrenda ?? "").trim()).filter(Boolean)),
+    ...new Set(pedidos.map((p) => canonical(p.tipoPrenda)).filter(Boolean)),
   ];
   // Sin pedidos: una columna en blanco para que el usuario ponga el tipo.
   if (tipos.length === 0) tipos.push("");
@@ -109,9 +121,7 @@ export function generarItems({
       secundariaPorTipo.set(tipo, []);
       continue;
     }
-    const pedidosTipo = pedidos.filter(
-      (p) => (p.tipoPrenda ?? "").trim() === tipo
-    );
+    const pedidosTipo = pedidos.filter((p) => canonical(p.tipoPrenda) === tipo);
     const agotadas = new Set<number>(); // existe en catálogo con stock 0
     const bajas = new Set<number>(); // 0 < stock <= umbral
     let hayNueva = false;

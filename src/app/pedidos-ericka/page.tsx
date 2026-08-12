@@ -27,7 +27,11 @@ export default async function ProduccionPage() {
   const pendientesPorTela = new Map<string, number>();
   const conteos = await prisma.prenda.groupBy({
     by: ["telaId"],
-    where: { archivedAt: null, estadoFabricacion: "compra_tela_pendiente", telaId: { not: null } },
+    where: {
+      archivedAt: null,
+      estadoFabricacion: { not: "enviado" },
+      telaId: { not: null },
+    },
     _count: { _all: true },
   });
   for (const c of conteos) {

@@ -22,7 +22,7 @@ export default async function PedidoErickaPage({
       where: {
         telaId,
         archivedAt: null,
-        estadoFabricacion: "compra_tela_pendiente",
+        estadoFabricacion: { not: "enviado" },
       },
     }),
   ]);
