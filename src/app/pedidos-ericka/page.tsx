@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GenerarPedidoBoton } from "@/components/generar-pedido-boton";
 import { MatrizEricka } from "@/components/matriz-ericka";
+import { CopiarBoton } from "@/components/copiar-boton";
+import { matrizTelaATSV } from "@/lib/exportar-tsv";
 import { formatMarcaTiempo } from "@/lib/alerta";
 import { ArrowLeftIcon, PencilIcon } from "lucide-react";
 
@@ -38,6 +40,18 @@ export default async function ProduccionPage() {
     if (c.telaId) pendientesPorTela.set(c.telaId, c._count._all);
   }
 
+  // TSV de todas las matrices generadas, para el botón "Copiar todo".
+  const tsvTodo = telas
+    .filter((t) => t.pedidosEricka[0])
+    .map((t) =>
+      matrizTelaATSV(
+        t.nombre,
+        cantidadTela(t.metrajeDisponible, t.unidad),
+        t.pedidosEricka[0].items
+      )
+    )
+    .join("\n\n");
+
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-5 p-6">
       <div className="flex flex-wrap items-center gap-2">
@@ -45,6 +59,15 @@ export default async function ProduccionPage() {
           <ArrowLeftIcon /> Prendas
         </Button>
         <h1 className="text-2xl font-semibold">Producción · Pedidos para Ericka</h1>
+        {tsvTodo && (
+          <div className="ml-auto">
+            <CopiarBoton
+              texto={tsvTodo}
+              label="Copiar todo para Sheets"
+              size="default"
+            />
+          </div>
+        )}
       </div>
 
       {telas.length === 0 && (
@@ -95,6 +118,16 @@ export default async function ProduccionPage() {
                 label={pedido ? "Regenerar" : "Generar"}
                 confirmar={!!pedido}
               />
+              {pedido && (
+                <CopiarBoton
+                  texto={matrizTelaATSV(
+                    tela.nombre,
+                    cantidadTela(tela.metrajeDisponible, tela.unidad),
+                    pedido.items
+                  )}
+                  label="Copiar"
+                />
+              )}
               <Button
                 variant="outline"
                 size="sm"

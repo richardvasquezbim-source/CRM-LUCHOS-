@@ -12,9 +12,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TelaForm } from "@/components/tela-form";
+import { CopiarBoton } from "@/components/copiar-boton";
 import { createTela, updateTela, eliminarTela } from "@/app/telas/actions";
 import { formatFechaSoloDia } from "@/lib/alerta";
 import { formatMonto } from "@/lib/formato";
+import { telasATSV } from "@/lib/exportar-tsv";
 import {
   PlusIcon,
   PencilIcon,
@@ -79,7 +81,14 @@ export function TelasView({ telas }: { telas: Tela[] }) {
           <FactoryIcon /> Producción
         </Button>
         <h1 className="text-2xl font-semibold">Telas</h1>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {telas.length > 0 && (
+            <CopiarBoton
+              texto={telasATSV(telas)}
+              label="Copiar para Sheets"
+              size="default"
+            />
+          )}
           <Dialog
             open={createOpen}
             onOpenChange={setCreateOpen}
