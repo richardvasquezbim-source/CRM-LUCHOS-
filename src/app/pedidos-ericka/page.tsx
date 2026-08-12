@@ -3,60 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GenerarPedidoBoton } from "@/components/generar-pedido-boton";
+import { MatrizEricka } from "@/components/matriz-ericka";
 import { formatMarcaTiempo } from "@/lib/alerta";
 import { ArrowLeftIcon, PencilIcon } from "lucide-react";
 
-type ItemResumen = {
-  talla: number;
-  tipoPrenda: string;
-  cantidad: number;
-  esPedidoCliente: boolean;
-  clienteNombre: string | null;
-};
-
 function cantidadTela(metraje: number, unidad: string) {
   return `${metraje} ${unidad === "kg" ? "kg" : "m"}`;
-}
-
-function TablaItems({ items }: { items: ItemResumen[] }) {
-  return (
-    <div className="overflow-x-auto rounded-md border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50 text-left">
-            <th className="px-3 py-1.5 font-medium">Talla</th>
-            <th className="px-3 py-1.5 font-medium">Tipo de prenda</th>
-            <th className="px-3 py-1.5 font-medium">Cant.</th>
-            <th className="px-3 py-1.5 font-medium">Cliente</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it, i) => (
-            <tr
-              key={i}
-              className={
-                it.esPedidoCliente
-                  ? "border-b bg-amber-100 dark:bg-amber-950"
-                  : "border-b"
-              }
-            >
-              <td className="px-3 py-1.5">{it.talla}</td>
-              <td className="px-3 py-1.5">{it.tipoPrenda || "-"}</td>
-              <td className="px-3 py-1.5">{it.cantidad}</td>
-              <td className="px-3 py-1.5">{it.clienteNombre || "-"}</td>
-            </tr>
-          ))}
-          {items.length === 0 && (
-            <tr>
-              <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">
-                Sin filas.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
 }
 
 export default async function ProduccionPage() {
@@ -149,7 +101,7 @@ export default async function ProduccionPage() {
             </div>
 
             {pedido ? (
-              <TablaItems items={pedido.items} />
+              <MatrizEricka items={pedido.items} />
             ) : (
               <p className="rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground">
                 Sin generar.{" "}
