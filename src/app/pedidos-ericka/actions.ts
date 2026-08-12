@@ -90,6 +90,7 @@ export async function generarPedidoEricka(telaId: string) {
   });
 
   revalidatePath(`/pedidos-ericka/${telaId}`);
+  revalidatePath("/pedidos-ericka");
 }
 
 export async function guardarItemsEricka(
@@ -127,6 +128,7 @@ export async function guardarItemsEricka(
   }
 
   revalidatePath(`/pedidos-ericka/${pedido.telaId}`);
+  revalidatePath("/pedidos-ericka");
 }
 
 export async function marcarPedidoEnviado(pedidoId: string) {
@@ -164,6 +166,7 @@ export async function marcarPedidoEnviado(pedidoId: string) {
   ]);
 
   revalidatePath(`/pedidos-ericka/${pedido.telaId}`);
+  revalidatePath("/pedidos-ericka");
   revalidatePath("/telas");
   revalidatePath("/"); // la tela pudo quedar agotada y salir del formulario
 }

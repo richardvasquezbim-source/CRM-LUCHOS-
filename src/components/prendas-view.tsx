@@ -35,6 +35,7 @@ import {
   PencilIcon,
   Trash2Icon,
   ScissorsIcon,
+  FactoryIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -360,6 +361,9 @@ export function PrendasView({
           </Button>
           <Button variant="outline" render={<Link href="/telas" />}>
             <ScissorsIcon /> Telas
+          </Button>
+          <Button variant="outline" render={<Link href="/pedidos-ericka" />}>
+            <FactoryIcon /> Producción
           </Button>
           <ProveedorManager proveedores={proveedores} />
           <Dialog

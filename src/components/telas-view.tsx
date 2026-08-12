@@ -21,6 +21,7 @@ import {
   Trash2Icon,
   ArrowLeftIcon,
   ScissorsIcon,
+  FactoryIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,6 +74,9 @@ export function TelasView({ telas }: { telas: Tela[] }) {
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" render={<Link href="/" />}>
           <ArrowLeftIcon /> Prendas
+        </Button>
+        <Button variant="outline" render={<Link href="/pedidos-ericka" />}>
+          <FactoryIcon /> Producción
         </Button>
         <h1 className="text-2xl font-semibold">Telas</h1>
         <div className="ml-auto">
