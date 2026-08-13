@@ -48,7 +48,6 @@ export function generarItems({
   stockPorGrupo: Record<string, Record<number, number>>;
 }): ItemGenerado[] {
   const metrajeMetros = metrajeEnMetros(metrajeDisponible, unidad);
-  const telaGrande = esTelaGrande(metrajeDisponible, unidad);
   const consumoDe = (t: number) => consumo[t] ?? 0;
 
   // Une tipos que solo difieren en mayúsculas ("PIJAMA" y "Pijama" → una
@@ -63,103 +62,97 @@ export function generarItems({
     canonicalMap.get((tipo ?? "").trim().toLowerCase()) ?? (tipo ?? "").trim();
 
   const items: ItemGenerado[] = [];
-  // Ahora una talla puede aparecer para varios tipos de prenda; la clave de
-  // "ya cubierta" es talla + tipo (una celda de la matriz).
+  // Una talla puede aparecer para varios tipos de prenda; la clave de "ya
+  // cubierta" es talla + tipo (una celda de la matriz).
   const cubiertas = new Set<string>();
   const clave = (t: number, tipo: string) => `${t}|${tipo}`;
   let orden = 0;
-  let metrajeUsado = 0;
 
-  const agregar = (t: number, tipo: string) => {
-    if (cubiertas.has(clave(t, tipo))) return;
+  const push = (
+    t: number,
+    tipo: string,
+    esCliente: boolean,
+    cliente: string | null
+  ): boolean => {
+    if (cubiertas.has(clave(t, tipo))) return false;
     items.push({
       talla: t,
       tipoPrenda: tipo,
       cantidad: 1,
-      esPedidoCliente: false,
-      clienteNombre: null,
+      esPedidoCliente: esCliente,
+      clienteNombre: cliente,
       orden: orden++,
     });
     cubiertas.add(clave(t, tipo));
-    metrajeUsado += consumoDe(t);
+    return true;
   };
 
-  // 1. Filas de cliente (resaltadas): los pedidos reales con talla numérica.
-  const pedidosOrdenados = [...pedidos]
-    .filter((p) => p.tallaNumero !== null)
-    .sort((a, b) => (a.tallaNumero as number) - (b.tallaNumero as number));
-
-  for (const p of pedidosOrdenados) {
-    const t = p.tallaNumero as number;
-    const tipoCanon = canonical(p.tipoPrenda);
-    items.push({
-      talla: t,
-      tipoPrenda: tipoCanon,
-      cantidad: 1,
-      esPedidoCliente: true,
-      clienteNombre: p.clienteNombre,
-      orden: orden++,
-    });
-    cubiertas.add(clave(t, tipoCanon));
-    metrajeUsado += consumoDe(t);
-  }
-
-  // 2. Sugerencias POR TIPO DE PRENDA: de una misma tela pueden salir varias
-  // prendas (Polera, Pijama…), y cada una lleva su propia tanda de tallas.
+  // Columnas = tipos de prenda. Sin pedidos, una columna en blanco.
   const tipos = [
     ...new Set(pedidos.map((p) => canonical(p.tipoPrenda)).filter(Boolean)),
   ];
-  // Sin pedidos: una columna en blanco para que el usuario ponga el tipo.
   if (tipos.length === 0) tipos.push("");
 
-  const prioridadPorTipo = new Map<string, number[]>();
-  const secundariaPorTipo = new Map<string, number[]>();
+  // La tela se REPARTE entre los tipos: de un rollo de 5 m para 2 prendas,
+  // cada tipo dispone de ~2.5 m. Así el total nunca excede la tela real.
+  const presupuestoPorTipo = metrajeMetros / tipos.length;
+  const GRANDE_METROS = 5; // metros por tipo que alcanzan para una tanda 0-10
 
   for (const tipo of tipos) {
-    if (telaGrande) {
-      prioridadPorTipo.set(tipo, [...TALLAS]); // tanda completa 0-10
-      secundariaPorTipo.set(tipo, []);
-      continue;
-    }
     const pedidosTipo = pedidos.filter((p) => canonical(p.tipoPrenda) === tipo);
-    const agotadas = new Set<number>(); // existe en catálogo con stock 0
-    const bajas = new Set<number>(); // 0 < stock <= umbral
-    let hayNueva = false;
-    for (const p of pedidosTipo) {
-      if (p.tipoPedido === "reposicion" && p.catalogoGrupo) {
-        const stock = stockPorGrupo[p.catalogoGrupo] ?? {};
-        for (const [tStr, c] of Object.entries(stock)) {
-          const t = Number(tStr);
-          if (c <= 0) agotadas.add(t);
-          else if (c <= UMBRAL_BAJO) bajas.add(t);
-        }
-      }
-      if (p.tipoPedido === "nueva") hayNueva = true;
-    }
-    const baseNueva = hayNueva ? [0, 1, 2, 3, 4] : [];
-    const medianasNueva = hayNueva ? [5, 6] : []; // máx 2 medianas
-    prioridadPorTipo.set(
-      tipo,
-      [...new Set([...agotadas, ...baseNueva])].sort((a, b) => a - b)
-    );
-    secundariaPorTipo.set(
-      tipo,
-      [...new Set([...bajas, ...medianasNueva])].sort((a, b) => a - b)
-    );
-  }
+    let usado = 0;
 
-  // Prioritarias de todos los tipos: se agregan siempre.
-  for (const tipo of tipos) {
-    for (const t of prioridadPorTipo.get(tipo) ?? []) agregar(t, tipo);
-  }
-  // Secundarias: solo mientras el metraje alcance (presupuesto compartido).
-  for (const tipo of tipos) {
-    for (const t of secundariaPorTipo.get(tipo) ?? []) {
+    // 1. Filas de cliente de este tipo: van siempre (son pedidos reales).
+    const clientes = pedidosTipo
+      .filter((p) => p.tallaNumero !== null)
+      .sort((a, b) => (a.tallaNumero as number) - (b.tallaNumero as number));
+    for (const p of clientes) {
+      const t = p.tallaNumero as number;
+      if (push(t, tipo, true, p.clienteNombre)) usado += consumoDe(t);
+    }
+
+    // 2. Sugerencias, por orden de prioridad, dentro del presupuesto del tipo.
+    const candidatas =
+      presupuestoPorTipo >= GRANDE_METROS
+        ? [...TALLAS] // alcanza para una tanda completa 0-10
+        : sugerenciasPorTipo(pedidosTipo, stockPorGrupo);
+    for (const t of candidatas) {
       if (cubiertas.has(clave(t, tipo))) continue;
-      if (metrajeUsado + consumoDe(t) > metrajeMetros) continue;
-      agregar(t, tipo);
+      if (usado + consumoDe(t) > presupuestoPorTipo) continue;
+      if (push(t, tipo, false, null)) usado += consumoDe(t);
     }
   }
 
   return items;
+}
+
+// Orden de prioridad de tallas sugeridas para un tipo con poca tela:
+// reposición (agotadas → bajas) y prenda nueva (chicas 0-4 → 2 medianas).
+function sugerenciasPorTipo(
+  pedidosTipo: PedidoPendiente[],
+  stockPorGrupo: Record<string, Record<number, number>>
+): number[] {
+  const agotadas = new Set<number>(); // existe en catálogo con stock 0
+  const bajas = new Set<number>(); // 0 < stock <= umbral
+  let hayNueva = false;
+  for (const p of pedidosTipo) {
+    if (p.tipoPedido === "reposicion" && p.catalogoGrupo) {
+      const stock = stockPorGrupo[p.catalogoGrupo] ?? {};
+      for (const [tStr, c] of Object.entries(stock)) {
+        const t = Number(tStr);
+        if (c <= 0) agotadas.add(t);
+        else if (c <= UMBRAL_BAJO) bajas.add(t);
+      }
+    }
+    if (p.tipoPedido === "nueva") hayNueva = true;
+  }
+  const base = hayNueva ? [0, 1, 2, 3, 4] : [];
+  const medianas = hayNueva ? [5, 6] : []; // máx 2 medianas
+  const orden = [
+    ...[...agotadas].sort((a, b) => a - b),
+    ...base,
+    ...[...bajas].sort((a, b) => a - b),
+    ...medianas,
+  ];
+  return [...new Set(orden)];
 }
