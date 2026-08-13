@@ -30,26 +30,28 @@ function fila(campos: (string | number)[]) {
 }
 
 export function telasATSV(telas: TelaTsv[]): string {
+  // Orden pedido por el usuario para calzar con su hoja de Drive. La columna
+  // "Costo total" aparece dos veces a propósito (así está su plantilla).
   const encabezado = fila([
     "Tela",
-    "Cantidad",
     "Unidad",
     "Costo x metro",
+    "Cantidad",
     "Costo total",
-    "Compra",
-    "Envio",
-    "Estado",
+    "Costo total",
+    "Fecha de compra",
+    "Fecha de envio",
   ]);
   const filas = telas.map((t) =>
     fila([
       t.nombre,
-      t.metrajeDisponible,
       t.unidad === "kg" ? "kg" : "m",
       t.costoPorMetro ?? "",
+      t.metrajeDisponible,
+      t.costoTotal ?? "",
       t.costoTotal ?? "",
       formatFechaSoloDia(t.fechaCompra) ?? "",
       formatFechaSoloDia(t.fechaEnvio) ?? "",
-      t.estado === "agotada" ? "Agotada" : "Disponible",
     ])
   );
   return [encabezado, ...filas].join("\n");
