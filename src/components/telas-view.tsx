@@ -20,6 +20,7 @@ import { telasATSV } from "@/lib/exportar-tsv";
 import {
   PlusIcon,
   PencilIcon,
+  CopyIcon,
   Trash2Icon,
   ArrowLeftIcon,
   ScissorsIcon,
@@ -52,6 +53,7 @@ function cantidad(t: Tela) {
 export function TelasView({ telas }: { telas: Tela[] }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editando, setEditando] = useState<Tela | null>(null);
+  const [duplicando, setDuplicando] = useState<Tela | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Tela | null>(null);
   const [isDeleting, startDeleting] = useTransition();
 
@@ -183,6 +185,15 @@ export function TelasView({ telas }: { telas: Tela[] }) {
                       type="button"
                       variant="ghost"
                       size="icon-sm"
+                      title="Duplicar"
+                      onClick={() => setDuplicando(t)}
+                    >
+                      <CopyIcon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       title="Eliminar"
                       onClick={() => setConfirmDelete(t)}
                     >
@@ -222,6 +233,27 @@ export function TelasView({ telas }: { telas: Tela[] }) {
               action={boundUpdate}
               submitLabel="Guardar cambios"
               onSuccess={() => setEditando(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicar: formulario de creación precargado con otra tela. */}
+      <Dialog
+        open={!!duplicando}
+        onOpenChange={(open) => !open && setDuplicando(null)}
+        disablePointerDismissal
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Duplicar tela</DialogTitle>
+          </DialogHeader>
+          {duplicando && (
+            <TelaForm
+              tela={duplicando}
+              action={createTela}
+              submitLabel="Crear copia"
+              onSuccess={() => setDuplicando(null)}
             />
           )}
         </DialogContent>
