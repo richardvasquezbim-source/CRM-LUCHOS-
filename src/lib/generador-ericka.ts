@@ -112,9 +112,12 @@ export function generarItems({
     }
 
     // 2. Sugerencias, por orden de prioridad, dentro del presupuesto del tipo.
+    // Sin pedidos no hay "señal" de reposición/nueva: se propone igual una
+    // tanda de tallas (limitada por el presupuesto) como punto de partida.
+    const sinPedidos = pedidosTipo.length === 0;
     const candidatas =
-      presupuestoPorTipo >= GRANDE_METROS
-        ? [...TALLAS] // alcanza para una tanda completa 0-10
+      presupuestoPorTipo >= GRANDE_METROS || sinPedidos
+        ? [...TALLAS] // tanda 0-10, limitada luego por el presupuesto
         : sugerenciasPorTipo(pedidosTipo, stockPorGrupo);
     for (const t of candidatas) {
       if (cubiertas.has(clave(t, tipo))) continue;

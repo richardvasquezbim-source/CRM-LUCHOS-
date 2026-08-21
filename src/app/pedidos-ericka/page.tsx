@@ -40,8 +40,17 @@ export default async function ProduccionPage() {
     if (c.telaId) pendientesPorTela.set(c.telaId, c._count._all);
   }
 
-  // TSV de todas las matrices generadas, para el botón "Copiar todo".
-  const tsvTodo = telas
+  // Los pedidos ya enviados a Ericka pasan a un historial aparte; la lista
+  // principal muestra solo lo que sigue en preparación (borrador o sin generar).
+  const activas = telas.filter(
+    (t) => (t.pedidosEricka[0]?.estado ?? "borrador") !== "enviado"
+  );
+  const enviadas = telas.filter(
+    (t) => t.pedidosEricka[0]?.estado === "enviado"
+  );
+
+  // "Copiar todo" solo junta los borradores activos (no lo ya enviado).
+  const tsvTodo = activas
     .filter((t) => t.pedidosEricka[0])
     .map((t) =>
       matrizTelaATSV(
@@ -80,7 +89,7 @@ export default async function ProduccionPage() {
         </p>
       )}
 
-      {telas.map((tela) => {
+      {activas.map((tela) => {
         const pedido = tela.pedidosEricka[0] ?? null;
         const pendientes = pendientesPorTela.get(tela.id) ?? 0;
         return (
@@ -150,6 +159,38 @@ export default async function ProduccionPage() {
           </section>
         );
       })}
+
+      {enviadas.length > 0 && (
+        <section className="flex flex-col gap-2 border-t pt-4">
+          <h2 className="text-sm font-semibold text-muted-foreground">
+            Historial de enviados
+          </h2>
+          {enviadas.map((tela) => {
+            const pedido = tela.pedidosEricka[0];
+            return (
+              <div
+                key={tela.id}
+                className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2"
+              >
+                <div className="mr-auto text-sm">
+                  <span className="font-medium">{tela.nombre}</span>{" "}
+                  <span className="text-muted-foreground">
+                    · {cantidadTela(tela.metrajeDisponible, tela.unidad)} ·
+                    enviado el {formatMarcaTiempo(pedido.enviadoEn)}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href={`/pedidos-ericka/${tela.id}`} />}
+                >
+                  Ver
+                </Button>
+              </div>
+            );
+          })}
+        </section>
+      )}
     </main>
   );
 }

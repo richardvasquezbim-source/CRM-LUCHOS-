@@ -84,9 +84,9 @@ export function TelasView({ telas }: { telas: Tela[] }) {
         </Button>
         <h1 className="text-2xl font-semibold">Telas</h1>
         <div className="ml-auto flex items-center gap-2">
-          {telas.length > 0 && (
+          {telas.some((t) => t.estado !== "agotada") && (
             <CopiarBoton
-              texto={telasATSV(telas)}
+              texto={telasATSV(telas.filter((t) => t.estado !== "agotada"))}
               label="Copiar para Sheets"
               size="default"
             />
