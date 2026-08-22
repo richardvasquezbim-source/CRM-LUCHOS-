@@ -153,7 +153,8 @@ export function PrendasView({
       if (
         q &&
         !p.clienteNombre.toLowerCase().includes(q) &&
-        !p.disenoTela.toLowerCase().includes(q)
+        !p.disenoTela.toLowerCase().includes(q) &&
+        !p.tipoPrenda.toLowerCase().includes(q)
       ) {
         return false;
       }
@@ -257,7 +258,7 @@ export function PrendasView({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Buscar por cliente o diseño..."
+          placeholder="Buscar por cliente, diseño o tipo..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="max-w-xs"
