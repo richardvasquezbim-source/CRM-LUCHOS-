@@ -1,17 +1,24 @@
+// Las CLAVES (key) se mantienen aunque cambien las etiquetas, para no
+// descuadrar los pedidos ya guardados. "tela_en_stock" es un estado nuevo.
 export const ESTADOS_FABRICACION = [
   {
+    key: "tela_en_stock",
+    label: "Tela en stock",
+    colorClasses: "bg-sky-100 text-sky-800 border-sky-200",
+  },
+  {
     key: "compra_tela_pendiente",
-    label: "Compra de tela pendiente",
+    label: "Tela pendiente de compra",
     colorClasses: "bg-slate-100 text-slate-800 border-slate-200",
   },
   {
     key: "tela_entregada",
-    label: "Tela entregada - en confección",
+    label: "Tela enviada",
     colorClasses: "bg-blue-100 text-blue-800 border-blue-200",
   },
   {
     key: "confeccionado",
-    label: "Confeccionado - pendiente de recojo",
+    label: "Pendiente de recogo",
     colorClasses: "bg-purple-100 text-purple-800 border-purple-200",
   },
   {

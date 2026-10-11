@@ -20,6 +20,7 @@ const PROVEEDORES_INICIALES = [
 ];
 
 const ESTADO_FABRICACION_LABELS: Record<EstadoFabricacionKey, string> = {
+  tela_en_stock: "tela en stock",
   compra_tela_pendiente: "compra de tela pendiente",
   tela_entregada: "tela entregada - en confección",
   confeccionado: "confeccionado - pendiente de recojo",

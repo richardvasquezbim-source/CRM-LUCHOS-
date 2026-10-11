@@ -29,15 +29,7 @@ import {
   updatePrenda,
   vaciarPapelera,
 } from "@/app/prendas/actions";
-import {
-  PlusIcon,
-  DownloadIcon,
-  PencilIcon,
-  Trash2Icon,
-  ScissorsIcon,
-  FactoryIcon,
-} from "lucide-react";
-import Link from "next/link";
+import { PlusIcon, DownloadIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 export type Prenda = {
@@ -360,12 +352,9 @@ export function PrendasView({
           >
             <DownloadIcon /> Exportar respaldo
           </Button>
-          <Button variant="outline" render={<Link href="/telas" />}>
-            <ScissorsIcon /> Telas
-          </Button>
-          <Button variant="outline" render={<Link href="/pedidos-ericka" />}>
-            <FactoryIcon /> Producción
-          </Button>
+          {/* Los accesos a Telas y Producción se ocultan de esta pantalla
+              (confunden a otros usuarios). Se entra por URL directa:
+              /telas y /pedidos-ericka. */}
           <ProveedorManager proveedores={proveedores} />
           <Dialog
             open={createOpen}
