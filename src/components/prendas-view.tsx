@@ -29,7 +29,16 @@ import {
   updatePrenda,
   vaciarPapelera,
 } from "@/app/prendas/actions";
-import { PlusIcon, DownloadIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  PlusIcon,
+  DownloadIcon,
+  PencilIcon,
+  Trash2Icon,
+  ScissorsIcon,
+  FactoryIcon,
+  EyeIcon,
+} from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 export type Prenda = {
@@ -122,6 +131,10 @@ export function PrendasView({
   const [alertaFiltro, setAlertaFiltro] = useState("todos");
   const [registroFiltro, setRegistroFiltro] = useState("todos");
   const [createOpen, setCreateOpen] = useState(false);
+  // Accesos a Telas/Producción ocultos por defecto; se muestran al tocar el
+  // ojo. Es estado local: al recargar vuelven a ocultarse (para que otros
+  // usuarios no los vean sin querer).
+  const [mostrarProduccion, setMostrarProduccion] = useState(false);
   const [editingPrenda, setEditingPrenda] = useState<Prenda | null>(null);
   const [duplicandoPrenda, setDuplicandoPrenda] = useState<Prenda | null>(null);
   const [detallePrenda, setDetallePrenda] = useState<Prenda | null>(null);
@@ -352,9 +365,27 @@ export function PrendasView({
           >
             <DownloadIcon /> Exportar respaldo
           </Button>
-          {/* Los accesos a Telas y Producción se ocultan de esta pantalla
-              (confunden a otros usuarios). Se entra por URL directa:
-              /telas y /pedidos-ericka. */}
+          {/* Accesos a Telas/Producción: ocultos hasta tocar el ojo. */}
+          {mostrarProduccion ? (
+            <>
+              <Button variant="outline" render={<Link href="/telas" />}>
+                <ScissorsIcon /> Telas
+              </Button>
+              <Button variant="outline" render={<Link href="/pedidos-ericka" />}>
+                <FactoryIcon /> Producción
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              title="Mostrar Telas y Producción"
+              onClick={() => setMostrarProduccion(true)}
+            >
+              <EyeIcon />
+            </Button>
+          )}
           <ProveedorManager proveedores={proveedores} />
           <Dialog
             open={createOpen}
