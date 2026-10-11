@@ -103,12 +103,27 @@ export function generarItems({
     let usado = 0;
 
     // 1. Filas de cliente de este tipo: van siempre (son pedidos reales).
-    const clientes = pedidosTipo
-      .filter((p) => p.tallaNumero !== null)
-      .sort((a, b) => (a.tallaNumero as number) - (b.tallaNumero as number));
-    for (const p of clientes) {
-      const t = p.tallaNumero as number;
-      if (push(t, tipo, true, p.clienteNombre)) usado += consumoDe(t);
+    // Si varios clientes piden la MISMA talla, se suma la cantidad y se
+    // juntan los nombres (2 Snoopy talla 3 → cantidad 2, con ambos clientes).
+    const porTalla = new Map<number, { cantidad: number; nombres: string[] }>();
+    for (const p of pedidosTipo) {
+      if (p.tallaNumero === null) continue;
+      const e = porTalla.get(p.tallaNumero) ?? { cantidad: 0, nombres: [] };
+      e.cantidad += 1;
+      if (p.clienteNombre) e.nombres.push(p.clienteNombre);
+      porTalla.set(p.tallaNumero, e);
+    }
+    for (const [t, info] of [...porTalla.entries()].sort((a, b) => a[0] - b[0])) {
+      items.push({
+        talla: t,
+        tipoPrenda: tipo,
+        cantidad: info.cantidad,
+        esPedidoCliente: true,
+        clienteNombre: info.nombres.join(", ") || null,
+        orden: orden++,
+      });
+      cubiertas.add(clave(t, tipo));
+      usado += consumoDe(t) * info.cantidad;
     }
 
     // 2. Sugerencias, por orden de prioridad, dentro del presupuesto del tipo.
