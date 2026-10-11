@@ -31,7 +31,6 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatMonto } from "@/lib/formato";
 
 function formatFecha(d: Date | null) {
   return formatFechaSoloDia(d) ?? "-";
@@ -178,7 +177,6 @@ function Fila({
           "-"
         )}
       </td>
-      <td className="px-3 py-2">{formatMonto(prenda.montoPagado)}</td>
       <td className="max-w-[160px] truncate px-3 py-2 text-muted-foreground italic">
         {prenda.nota || ""}
       </td>
@@ -265,9 +263,6 @@ function FilaCard({
   );
   const estadoFabricacion = getEstadoFabricacion(prenda.estadoFabricacion);
   const estadoPago = getEstadoPago(prenda.estadoPago);
-  const envio = prenda.fechaEnvioReal
-    ? formatFechaSoloDia(prenda.fechaEnvioReal)
-    : "Pendiente";
 
   return (
     <div
@@ -359,17 +354,12 @@ function FilaCard({
         Proveedor: {prenda.proveedor.nombre}
       </p>
       <p className="text-xs text-muted-foreground">
-        Entrega: {formatFecha(prenda.fechaEntregaSolicitada)} · Envío: {envio}
+        Entrega: {formatFecha(prenda.fechaEntregaSolicitada)}
       </p>
       <p className="text-xs text-muted-foreground">
         Registro: {formatMarcaTiempo(prenda.createdAt)} · Actualizado:{" "}
         {formatMarcaTiempo(prenda.updatedAt)}
       </p>
-      {prenda.montoPagado !== null && (
-        <p className="text-xs text-muted-foreground">
-          Monto: {formatMonto(prenda.montoPagado)}
-        </p>
-      )}
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <Badge variant="outline" className={estadoFabricacion.colorClasses}>
           {estadoFabricacion.label}
@@ -472,7 +462,6 @@ export function PrendaTable({
               Entrega
             </ThOrden>
             <th className="px-3 py-2 font-medium">Alerta</th>
-            <th className="px-3 py-2 font-medium">Monto</th>
             <th className="px-3 py-2 font-medium">Nota</th>
             <th className="sticky right-0 z-10 border-l bg-muted px-3 py-2 font-medium">
               Acciones
@@ -492,7 +481,7 @@ export function PrendaTable({
           ))}
           {ordenadas.length === 0 && (
             <tr>
-              <td colSpan={15} className="px-3 py-6 text-center text-muted-foreground">
+              <td colSpan={14} className="px-3 py-6 text-center text-muted-foreground">
                 Sin prendas que coincidan con los filtros.
               </td>
             </tr>

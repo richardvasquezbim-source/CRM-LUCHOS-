@@ -402,17 +402,6 @@ export function PrendaForm({
         </Field>
 
         <Field orientation="responsive">
-          <FieldLabel htmlFor="fechaCompra">Fecha de compra</FieldLabel>
-          <Input
-            id="fechaCompra"
-            name="fechaCompra"
-            type="date"
-            value={values.fechaCompra}
-            onChange={(e) => set("fechaCompra", e.target.value)}
-          />
-        </Field>
-
-        <Field orientation="responsive">
           <FieldLabel htmlFor="fechaEntregaSolicitada">
             Fecha de entrega solicitada
           </FieldLabel>
@@ -423,33 +412,6 @@ export function PrendaForm({
             value={values.fechaEntregaSolicitada}
             onChange={(e) => set("fechaEntregaSolicitada", e.target.value)}
           />
-        </Field>
-
-        <Field orientation="responsive">
-          <FieldLabel htmlFor="fechaEnvioReal">Fecha de envío real</FieldLabel>
-          <Input
-            id="fechaEnvioReal"
-            name="fechaEnvioReal"
-            type="date"
-            value={values.fechaEnvioReal}
-            onChange={(e) => set("fechaEnvioReal", e.target.value)}
-          />
-        </Field>
-
-        <Field orientation="responsive">
-          <FieldLabel htmlFor="montoPagado">Monto pagado</FieldLabel>
-          <Input
-            id="montoPagado"
-            name="montoPagado"
-            type="number"
-            step="0.01"
-            min="0"
-            value={values.montoPagado}
-            onChange={(e) => set("montoPagado", e.target.value)}
-          />
-          {state.errors.montoPagado && (
-            <FieldError>{state.errors.montoPagado[0]}</FieldError>
-          )}
         </Field>
 
         <Field>

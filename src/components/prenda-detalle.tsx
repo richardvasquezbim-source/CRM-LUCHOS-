@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CircleAlertIcon } from "lucide-react";
-import { formatMonto } from "@/lib/formato";
 import { getEstadoFabricacion, getEstadoPago } from "@/lib/estados";
 import {
   calcularAlerta,
@@ -101,12 +100,9 @@ export function PrendaDetalle({
       <Dato label="Última actualización">
         {formatMarcaTiempo(prenda.updatedAt, { conHora: true })}
       </Dato>
-      <Dato label="Fecha de compra">{fecha(prenda.fechaCompra)}</Dato>
       <Dato label="Entrega solicitada">
         {fecha(prenda.fechaEntregaSolicitada)}
       </Dato>
-      <Dato label="Envío real">{fecha(prenda.fechaEnvioReal)}</Dato>
-      <Dato label="Monto pagado">{formatMonto(prenda.montoPagado)}</Dato>
       {alerta && (
         <Dato label="Alerta">
           <Badge variant="outline" className={alertaClasses[alerta.nivel]}>
