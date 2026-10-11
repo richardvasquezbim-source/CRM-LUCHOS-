@@ -107,11 +107,13 @@ function Fila({
     <tr
       className={cn(
         "group cursor-pointer border-b",
-        // Rojo bien marcado: sobre el fondo rosa del tema, un tono claro
-        // como red-50 no se distingue.
+        // Urgente = rojo (prioridad). Listo para envío = verde, para que
+        // salte a la vista. Tonos claros no se distinguen sobre el rosa.
         prenda.urgente
           ? "bg-red-200 hover:bg-red-300 dark:bg-red-950 dark:hover:bg-red-900"
-          : "hover:bg-muted/50"
+          : prenda.estadoFabricacion === "listo_envio"
+            ? "bg-green-200 hover:bg-green-300 dark:bg-green-950 dark:hover:bg-green-900"
+            : "hover:bg-muted/50"
       )}
       onClick={() => onView(prenda)}
     >
@@ -187,7 +189,9 @@ function Fila({
           "sticky right-0 z-10 border-l px-3 py-2",
           prenda.urgente
             ? "bg-red-200 group-hover:bg-red-300 dark:bg-red-950 dark:group-hover:bg-red-900"
-            : "bg-background group-hover:bg-muted"
+            : prenda.estadoFabricacion === "listo_envio"
+              ? "bg-green-200 group-hover:bg-green-300 dark:bg-green-950 dark:group-hover:bg-green-900"
+              : "bg-background group-hover:bg-muted"
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -279,7 +283,9 @@ function FilaCard({
         "cursor-pointer rounded-xl border p-3 text-left",
         prenda.urgente
           ? "border-red-400 bg-red-200 hover:bg-red-300 dark:border-red-900 dark:bg-red-950 dark:hover:bg-red-900"
-          : "bg-card hover:bg-muted/50"
+          : prenda.estadoFabricacion === "listo_envio"
+            ? "border-green-400 bg-green-200 hover:bg-green-300 dark:border-green-900 dark:bg-green-950 dark:hover:bg-green-900"
+            : "bg-card hover:bg-muted/50"
       )}
     >
       <div className="flex items-start justify-between gap-2">
